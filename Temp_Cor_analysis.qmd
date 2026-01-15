@@ -1,0 +1,1648 @@
+---
+title: "Data analysis"
+author: "KCM"
+format: html
+editor: visual
+---
+
+Note: enter PATH where file was saved to run code in "Upload files" section
+
+# Remove objects
+
+```{r}
+rm(list = ls())
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+# Install packages
+
+```{r}
+#install.packages('readxl')
+#install.packages("gridExtra")
+#install.packages("ggfortify")
+#install.packages("stats")
+#install.packages("factoextra")
+#install.packages("corrplot")
+#install.packages("corrr")
+#install.packages("ggcorrplot")
+#install.packages("FactoMineR")
+#install.packages("tidyverse")
+#install.packages("broom")
+#install.packages("patchwork")
+#install.packages("lubridate")
+#install.packages("ggiraphExtra")
+#install.packages("pscl")
+#install.packages("MASS")
+#install.packages("car")
+#install.packages("modelr")
+#install.packages("rstatix")
+#install.packages("FSA")
+#install.packages("DHARMa")
+#install.packages("emmeans")
+#install.packages("pscl")
+#install.packages("knitr")
+#install.packages("rmarkdown")
+#install.packages("htmltools")
+#install.packages("superb")
+#install.packages("ggeffects")
+#install.packages("vegan")
+#install.packages('glmmTMB')
+#install.packages('janitor')
+#install.packages('ggrepel')
+```
+
+# `Library` packages
+
+```{r}
+library(readxl)
+library(gridExtra)
+library(corrplot)
+library(ggplot2)
+library(ggfortify)
+library(stats)
+library(factoextra)
+library('corrr')
+library(ggcorrplot)
+library("FactoMineR")
+library(tidyverse)
+library(broom)
+library(patchwork)
+library(lubridate)
+library(lme4)
+library(lmerTest)
+library(ggiraphExtra)
+library(ggeffects)
+library(ggpubr)
+library(MASS)
+library(car)
+library(modelr)
+library(rstatix)
+library(FSA)
+library(DHARMa)
+library(splines)
+library("emmeans")
+library("pscl")
+library("knitr")
+library("rmarkdown")
+library('htmltools')
+library('superb')
+library('ggeffects')
+library('vegan')
+library(glmmTMB)
+library(janitor)
+library(ggrepel)
+```
+
+# Upload files NOT
+
+Upload clean novel object file.
+
+```{r}
+novelobj <- read.csv("~/Novel_Obj_final.csv") %>% 
+  dplyr::select(-age, -inst_id, -sex, -housing, -birth_type)
+```
+
+For white rhino:
+
+```{r}
+w.novelobj <- novelobj %>% filter(species == "White")
+```
+
+For black rhino:
+
+```{r}
+b.novelobj <- novelobj %>% filter(species == "Black")
+```
+
+# Upload files SURVEY
+
+Upload clean temperament survey which has 1 row per rhino using the median.
+
+All rhinos:
+
+```{r}
+temp <- read.csv("~/Temp_Survey_final.csv")
+```
+
+Black rhino:
+
+```{r}
+b.temp <- temp %>% filter(species == "Black")
+```
+
+White rhino:
+
+```{r}
+w.temp <- temp %>% filter(species == "White") 
+```
+
+```{r}
+w.temp %>% count(housing)
+b.temp %>% count(housing)
+```
+
+# COMBINED DATASET
+
+BR facilities - Keeper survey 23 / NOT 17 WR facilities - Keeper survey 37 / NOT 23
+
+Total facilities - Keeper survey 56 / NOT 39
+
+# 1. Create dataframe:
+
+## BR
+
+Include only rhinos that have both PCA scores and novel object test values.
+
+```{r}
+BRM_temperament <- b.temp %>% 
+  inner_join(b.novelobj, by = "rhino_id") %>% as_tibble()  
+```
+
+Rearrange columns to have info 1st and data after.
+
+```{r}
+BRM_temperament <- BRM_temperament %>% 
+  dplyr::select(rhino_id, inst_id, age, birth_type, sex, train, 
+                housing, beh_number_daily,temperature, precipitation, 
+                cloud_cover, access, size, calf_present, previous_presence, 
+                everything()) 
+```
+
+## WR
+
+Include only rhinos that have both PCA scores and novel object test values.
+
+```{r}
+WRM_temperament <- w.temp %>% 
+  inner_join(w.novelobj, by = "rhino_id") %>% as_tibble()  
+```
+
+Rearrange columns to have info 1st and data after.
+
+```{r}
+WRM_temperament <- WRM_temperament %>% 
+  dplyr::select(rhino_id, inst_id, age, birth_type, sex, train, 
+                housing, beh_number_daily,temperature, precipitation, 
+                cloud_cover, access, size, calf_present, previous_presence, 
+                everything()) 
+```
+
+# VALIDATION
+
+## BR
+
+### 1. Create correlation table:
+
+Rearrange table to include only numeric columns to run correlation code
+
+```{r}
+Bcor_matrix1 <- BRM_temperament %>% dplyr::select(freq.retreat, freq.olfact_obj,freq.olfact_other, freq.advance_direct, freq.contact_inx, freq.advance_direct, prop.near, prop.stimulated, prop.unstimulated, prop.active, prop.inactive, prop.gatewait,latency_sec, prop.pace)
+
+Bcor_matrix <- cor(Bcor_matrix1, use = "complete.obs", method = "spearman")
+
+Bcor_matrix <- corrplot(Bcor_matrix, method = "number")
+```
+
+```{r}
+Bcor_NO <- as.data.frame(Bcor_matrix)
+
+Bcor_NO <- Bcor_NO %>% dplyr::select(1,2,3,4,5,6,7,8,9,10,11,12,13,15) %>% dplyr::select("corrPos.yName", everything()) %>% distinct()
+```
+
+For these other behaviors from the survey, I used Pearson's correlation because they are continuous variables.
+
+```{r}
+Bcor_matrix1 <- BRM_temperament %>% dplyr::select(investigative, active, calm, sleep, stereotypies, fam_af, fam_ag, fam_ff, responsive, stranger_af, stranger_ag, stranger_ff)
+
+Bcor_TSA <- cor(Bcor_matrix1, use = "complete.obs")
+
+Bcor_TSA <- as.data.frame(Bcor_TSA)
+#Bcor_matrix <- corrplot(Bcor_matrix, method = "number")
+```
+
+```{r}
+as.data.frame(Bcor_matrix)
+```
+
+```{r}
+testRes <- cor.mtest(Bcor_matrix1, conf.level = 0.95)
+
+#corrplot(Bcor_matrix, p.mat = testRes$p, method = 'circle', type = 'lower', insig='blank',
+         #addCoef.col ='black', number.cex = 0.8, order = 'AOE', diag=FALSE)
+```
+
+```{r}
+Bcor_matrix1 <- BRM_temperament %>% dplyr::select(pre_obj, no_obj, assertive, chemosensory, con_af, con_ag, con_ff, social, vocal, food_ag)
+
+Bcor_TSS <- cor(Bcor_matrix1, use = "complete.obs")
+
+Bcor_TSS <- as.data.frame(Bcor_TSS)
+#Bcor_matrix <- corrplot(Bcor_matrix, method = "number")
+```
+
+Save as CSV files
+
+```{r}
+#write.csv(Bcor_NO, "~/Bcor_NO.csv")
+#write.csv(Bcor_TSA, "~/Bcor_TSA.csv")
+#write.csv(Bcor_TSS, "~/Bcor_TSS.csv")
+```
+
+```{r}
+testRes <- cor.mtest(Bcor_matrix1, conf.level = 0.95)
+
+#corrplot(Bcor_matrix, p.mat = testRes$p, method = 'circle', type = 'lower', insig='blank',
+ #        addCoef.col ='black', number.cex = 0.8, order = 'AOE', diag=FALSE)
+```
+
+```{r}
+Bcor_matrix <- BRM_temperament %>% dplyr::select(PC1, PC2, PC3, freq.retreat, freq.olfact_obj,freq.olfact_other, freq.advance_direct, freq.contact_inx, prop.near, prop.stimulated, prop.active)
+
+Bcor_matrix <- cor(Bcor_matrix, use = "complete.obs")
+
+Bcor_matrix <- corrplot(Bcor_matrix, method = "pie")
+```
+
+Create new columns and rows for combined behaviors
+
+```{r}
+BRM_temperament <- BRM_temperament %>% mutate(affiliative = fam_af + stranger_af)
+BRM_temperament <- BRM_temperament %>% mutate(aggressive = fam_ag + stranger_ag)
+BRM_temperament <- BRM_temperament %>% mutate(fearful = fam_ff + stranger_ff)
+BRM_temperament <- BRM_temperament %>% mutate(cons_ag = con_ag + food_ag)
+```
+
+### 2. Correlation
+
+Spearman's correlation coefficient for proportion and rate (frequency) data: PC1: stranger affiliative, calm, familiar fearful.
+
+```{r}
+cor.test(BRM_temperament$PC1, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$PC1, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$PC1, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$PC1, BRM_temperament$prop.gatewait, method = "spearman")
+cor.test(BRM_temperament$PC1, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$PC1, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$PC1, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$PC1, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$PC1, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$PC1, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$PC1, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$PC1, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$PC1, BRM_temperament$latency_sec, method = "spearman")
+```
+
+PC2: active, sleep, stereotypies.
+
+```{r}
+cor.test(BRM_temperament$PC2, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$PC2, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$PC2, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$PC2, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$PC2, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$PC2, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$PC2, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$PC2, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$PC2, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$PC2, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$PC2, BRM_temperament$prop.gatewait, method = "spearman")
+cor.test(BRM_temperament$PC2, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$PC2, BRM_temperament$latency_sec, method = "spearman")
+```
+
+PC3: Stranger aggressive, investigative, responsive.
+
+```{r}
+cor.test(BRM_temperament$PC3, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$PC3, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$PC3, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$PC3, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$PC3, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$PC3, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$PC3, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$PC3, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$PC3, BRM_temperament$prop.gatewait, method = "spearman")
+cor.test(BRM_temperament$PC3, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$PC3, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$PC3, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$PC3, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Investigative:
+
+```{r}
+cor.test(BRM_temperament$investigative, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+Calm:
+
+```{r}
+cor.test(BRM_temperament$calm, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+Stereotypies:
+
+```{r}
+cor.test(BRM_temperament$stereotypies, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+Conspecific affiliative:
+
+```{r}
+cor.test(BRM_temperament$con_af, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Conspecific aggressive:
+
+```{r}
+cor.test(BRM_temperament$con_ag, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$con_ag, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$con_ag, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$con_ag, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$con_ag, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$con_ag, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$con_ag, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$con_ag, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$con_ag, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$con_ag, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$con_ag, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$con_ag, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Conspecific fearful:
+
+```{r}
+cor.test(BRM_temperament$con_ff, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Familiar fearful:
+
+```{r}
+cor.test(BRM_temperament$fam_ff, BRM_temperament$prop.gatewait, method = "spearman")
+cor.test(BRM_temperament$stranger_ff, BRM_temperament$prop.gatewait, method = "spearman")
+cor.test(BRM_temperament$fam_ff, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$fam_ff, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Assertive:
+
+```{r}
+cor.test(BRM_temperament$assertive, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$assertive, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$assertive, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$assertive, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$assertive, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$assertive, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$assertive, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$assertive, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$assertive, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$assertive, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$assertive, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$assertive, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Chemosensory:
+
+```{r}
+cor.test(BRM_temperament$chemosensory, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$prop.inactive, method = "pearson")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$latency_sec, method = "pearson")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$prop.gatewait, method = "pearson")
+```
+
+Food aggressive:
+
+```{r}
+cor.test(BRM_temperament$food_ag, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$food_ag, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$food_ag, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$food_ag, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$food_ag, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$food_ag, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$food_ag, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$food_ag, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$food_ag, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$food_ag, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$food_ag, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Novel object:
+
+```{r}
+cor.test(BRM_temperament$no_obj, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+Preferred object:
+
+```{r}
+cor.test(BRM_temperament$pre_obj, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$pre_obj, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$pre_obj, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$pre_obj, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$pre_obj, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$pre_obj, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$pre_obj, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$pre_obj, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$pre_obj, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$pre_obj, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$pre_obj, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$pre_obj, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Vocal:
+
+```{r}
+cor.test(BRM_temperament$vocal, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+Social:
+
+```{r}
+cor.test(BRM_temperament$social, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$social, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$social, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$social, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$social, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$social, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$social, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$social, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$social, BRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(BRM_temperament$social, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$social, BRM_temperament$prop.inactive, method = "spearman")
+cor.test(BRM_temperament$social, BRM_temperament$latency_sec, method = "spearman")
+```
+
+### 3. Correlation simplified:
+
+Spearman's correlation coefficient for proportion and rate (frequency) data
+
+Affiliative:
+
+```{r}
+cor.test(BRM_temperament$affiliative, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$affiliative, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$affiliative, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$affiliative, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$affiliative, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$affiliative, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$affiliative, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$affiliative, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$affiliative, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$affiliative, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$affiliative, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+Aggressive:
+
+```{r}
+cor.test(BRM_temperament$aggressive, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$aggressive, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$aggressive, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$aggressive, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$aggressive, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$aggressive, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$aggressive, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$aggressive, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$aggressive, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$aggressive, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$aggressive, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+Fearful:
+
+```{r}
+cor.test(BRM_temperament$fearful, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$fearful, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$fearful, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$fearful, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$fearful, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$fearful, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$fearful, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$fearful, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$fearful, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$fearful, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$fearful, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+Investigative:
+
+```{r}
+cor.test(BRM_temperament$investigative, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$investigative, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Active:
+
+```{r}
+cor.test(BRM_temperament$active, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$active, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$active, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$active, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$active, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$active, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$active, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$active, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$active, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$active, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$active, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+Calm:
+
+```{r}
+cor.test(BRM_temperament$calm, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$calm, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Stereotypies:
+
+```{r}
+cor.test(BRM_temperament$stereotypies, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$stereotypies, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Conspecific affiliative:
+
+```{r}
+cor.test(BRM_temperament$con_af, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$con_af, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+Conspecific aggressive & food aggressive:
+
+```{r}
+cor.test(BRM_temperament$cons_ag, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$cons_ag, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$cons_ag, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$cons_ag, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$cons_ag, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$cons_ag, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$cons_ag, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$cons_ag, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$cons_ag, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$cons_ag, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$cons_ag, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+Conspecific fearful:
+
+```{r}
+cor.test(BRM_temperament$con_ff, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$con_ff, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+Chemosensory:
+
+```{r}
+cor.test(BRM_temperament$chemosensory, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$chemosensory, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Novel object:
+
+```{r}
+cor.test(BRM_temperament$no_obj, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$no_obj, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Vocal:
+
+```{r}
+cor.test(BRM_temperament$vocal, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$vocal, BRM_temperament$latency_sec, method = "spearman")
+```
+
+Responsive:
+
+```{r}
+cor.test(BRM_temperament$responsive, BRM_temperament$freq.retreat, method = "spearman")
+cor.test(BRM_temperament$responsive, BRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(BRM_temperament$responsive, BRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(BRM_temperament$responsive, BRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(BRM_temperament$responsive, BRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(BRM_temperament$responsive, BRM_temperament$prop.near, method = "spearman")
+cor.test(BRM_temperament$responsive, BRM_temperament$prop.stimulated, method = "spearman")
+cor.test(BRM_temperament$responsive, BRM_temperament$prop.active, method = "spearman")
+cor.test(BRM_temperament$responsive, BRM_temperament$prop.pace, method = "spearman")
+cor.test(BRM_temperament$responsive, BRM_temperament$latency_sec, method = "spearman")
+cor.test(BRM_temperament$responsive, BRM_temperament$prop.gatewait, method = "spearman")
+```
+
+## WR
+
+### 1. Create correlation table:
+
+```{r}
+Wcor_matrix1 <- WRM_temperament %>% dplyr::select(pre_obj, no_obj, assertive, chemosensory, con_af, con_ag, con_ff, social, vocal, food_ag)
+
+Wcor_matrix <- cor(Wcor_matrix1, use = "complete.obs")
+
+#Wcor_matrix <- corrplot(Wcor_matrix, method = "number")
+```
+
+```{r}
+Wcor_TSS <- as.data.frame(Wcor_matrix)
+```
+
+```{r}
+testRes <- cor.mtest(Wcor_matrix1, conf.level = 0.95)
+
+corrplot(Wcor_matrix, p.mat = testRes$p, method = 'circle', type = 'lower', insig='blank',
+         addCoef.col ='black', number.cex = 0.8, order = 'AOE', diag=FALSE)
+```
+
+```{r}
+Wcor_matrix1 <- WRM_temperament %>% dplyr::select(freq.pant, freq.olfact_obj,freq.olfact_other, freq.advance_direct, freq.contact_inx, freq.attack, prop.near, prop.stimulated,prop.unstimulated, prop.active, prop.inactive, prop.gatewait, latency_sec, prop.pace)
+
+Wcor_matrix <- cor(Wcor_matrix1, use = "complete.obs", method = "spearman")
+
+Wcor_matrix <- corrplot(Wcor_matrix, method = "number")
+```
+
+```{r}
+Wcor_NO <- as.data.frame(Wcor_matrix)
+
+Wcor_NO <- Wcor_NO %>% dplyr::select(1,2,3,4,5,6,7,8,9,10,11,12,13,14,16) %>% dplyr::select("corrPos.yName", everything()) %>% distinct()
+
+Wcor_NO <- Wcor_NO %>%  mutate(across(everything(), ~ str_remove(.x,"freq."))) 
+Wcor_NO <- Wcor_NO %>%  mutate(across(everything(), ~ str_remove(.x,"prop."))) 
+```
+
+```{r}
+Wcor_matrix1 <- WRM_temperament %>% dplyr::select(investigative, active, calm, sleep, stereotypies, fam_af, fam_ag, fam_ff, responsive, stranger_af, stranger_ag, stranger_ff)
+
+Wcor_matrix <- cor(Wcor_matrix1, use = "complete.obs")
+
+#Wcor_matrix <- corrplot(Wcor_matrix, method = "number")
+```
+
+```{r}
+Wcor_TSA <- as.data.frame(Wcor_matrix)
+```
+
+```{r}
+testRes <- cor.mtest(Wcor_matrix1, conf.level = 0.95)
+
+corrplot(Wcor_matrix, p.mat = testRes$p, method = 'circle', type = 'lower', insig='blank',
+         addCoef.col ='black', number.cex = 0.8, order = 'AOE', diag=FALSE)
+```
+
+```{r}
+Wcor_matrix <- WRM_temperament %>% dplyr::select(con_af, con_ag, con_ff, assertive, chemosensory, food_ag, no_obj, pre_obj, vocal, social, freq.olfact_obj,freq.olfact_other, freq.advance_direct, freq.contact_inx, prop.near, prop.stimulated, prop.active)
+
+Wcor_matrix <- cor(Wcor_matrix, use = "complete.obs")
+
+Wcor_matrix <- corrplot(Wcor_matrix, method = "pie")
+```
+
+Save as CSV files
+
+```{r}
+#write.csv(Wcor_NO, "~/Wcor_NO.csv")
+#write.csv(Wcor_TSA, "~/Wcor_TSA.csv")
+#write.csv(Wcor_TSS, "~/Wcor_TSS.csv")
+```
+
+Create new columns and rows for combined behaviors
+
+```{r}
+WRM_temperament <- WRM_temperament %>% mutate(aggressive = fam_ag + stranger_ag)
+WRM_temperament <- WRM_temperament %>% mutate(cons_ag = con_ag + food_ag)
+```
+
+### 2. Correlation
+
+Spearman's correlation coefficient for proportion and rate (frequency) data:
+
+PC1: Familiar affialitive, familiar aggressive, stranger affiliative.
+
+```{r}
+cor.test(WRM_temperament$PC1, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$PC1, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$PC1, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$PC1, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$PC1, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$PC1, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$PC1, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$PC1, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$PC1, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$PC1, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$PC1, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$PC1, WRM_temperament$latency_sec, method = "spearman")
+```
+
+PC2: active, sleep, investigative.
+
+```{r}
+cor.test(WRM_temperament$PC2, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$PC2, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$PC2, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$PC2, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$PC2, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$PC2, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$PC2, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$PC2, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$PC2, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$PC2, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$PC2, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$PC2, WRM_temperament$latency_sec, method = "spearman")
+```
+
+PC3: calm, investigative, familiar aggressive.
+
+```{r}
+cor.test(WRM_temperament$PC3, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$PC3, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$PC3, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$PC3, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$PC3, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$PC3, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$PC3, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$PC3, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$PC3, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$PC3, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$PC3, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$PC3, WRM_temperament$latency_sec, method = "spearman")
+```
+
+PC4: stereotypies, responsive, sleep.
+
+```{r}
+cor.test(WRM_temperament$PC4, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$PC4, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$PC4, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$PC4, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$PC4, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$PC4, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$PC4, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$PC4, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$PC4, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$PC4, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$PC4, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$PC4, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Investigative:
+
+```{r}
+cor.test(WRM_temperament$investigative, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Calm:
+
+```{r}
+cor.test(WRM_temperament$calm, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Stereotypies:
+
+```{r}
+cor.test(WRM_temperament$stereotypies, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Conspecific affiliative:
+
+```{r}
+cor.test(WRM_temperament$con_af, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Conspecific aggressive:
+
+```{r}
+cor.test(WRM_temperament$con_ag, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$con_ag, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$con_ag, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$con_ag, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$con_ag, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$con_ag, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$con_ag, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$con_ag, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$con_ag, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$con_ag, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$con_ag, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$con_ag, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Conspecific fearful:
+
+```{r}
+cor.test(WRM_temperament$con_ff, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Assertive:
+
+```{r}
+cor.test(WRM_temperament$assertive, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$assertive, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$assertive, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$assertive, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$assertive, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$assertive, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$assertive, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$assertive, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$assertive, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$assertive, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$assertive, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$assertive, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Chemosensory:
+
+```{r}
+cor.test(WRM_temperament$chemosensory, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Food aggressive:
+
+```{r}
+cor.test(WRM_temperament$food_ag, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$food_ag, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$food_ag, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$food_ag, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$food_ag, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$food_ag, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$food_ag, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$food_ag, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$food_ag, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$food_ag, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$food_ag, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$food_ag, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Novel object:
+
+```{r}
+cor.test(WRM_temperament$no_obj, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Preferred object:
+
+```{r}
+cor.test(WRM_temperament$pre_obj, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$pre_obj, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$pre_obj, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$pre_obj, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$pre_obj, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$pre_obj, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$pre_obj, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$pre_obj, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$pre_obj, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$pre_obj, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$pre_obj, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$pre_obj, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Vocal:
+
+```{r}
+cor.test(WRM_temperament$vocal, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Social:
+
+```{r}
+cor.test(WRM_temperament$social, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$social, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$social, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$social, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$social, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$social, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$social, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$social, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$social, WRM_temperament$prop.unstimulated, method = "spearman")
+cor.test(WRM_temperament$social, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$social, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$social, WRM_temperament$latency_sec, method = "spearman")
+```
+
+### 3. Correlation: simplified
+
+Investigative:
+
+```{r}
+cor.test(WRM_temperament$investigative, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$investigative, WRM_temperament$latency_sec, method = "spearman")
+```
+
+active:
+
+```{r}
+cor.test(WRM_temperament$active, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$active, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$active, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$active, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$active, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$active, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$active, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$active, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$active, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$active, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$active, WRM_temperament$latency_sec, method = "spearman")
+```
+
+calm:
+
+```{r}
+cor.test(WRM_temperament$calm, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$calm, WRM_temperament$latency_sec, method = "spearman")
+```
+
+stereotypies:
+
+```{r}
+cor.test(WRM_temperament$stereotypies, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$stereotypies, WRM_temperament$latency_sec, method = "spearman")
+```
+
+aggressive (familiar and stranger):
+
+```{r}
+cor.test(WRM_temperament$aggressive, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$aggressive, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$aggressive, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$aggressive, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$aggressive, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$aggressive, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$aggressive, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$aggressive, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$aggressive, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$aggressive, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$aggressive, WRM_temperament$latency_sec, method = "spearman")
+```
+
+```{r}
+WRM_temperament %>% count(sex)
+```
+
+Familiar fearful:
+
+```{r}
+cor.test(WRM_temperament$fam_ff, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$fam_ff, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$fam_ff, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$fam_ff, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$fam_ff, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$fam_ff, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$fam_ff, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$fam_ff, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$fam_ff, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$fam_ff, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$fam_ff, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Stranger fearful:
+
+```{r}
+cor.test(WRM_temperament$stranger_ff, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$stranger_ff, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$stranger_ff, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$stranger_ff, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$stranger_ff, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$stranger_ff, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$stranger_ff, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$stranger_ff, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$stranger_ff, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$stranger_ff, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$stranger_ff, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Familiar affiliative:
+
+```{r}
+cor.test(WRM_temperament$fam_af, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$fam_af, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$fam_af, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$fam_af, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$fam_af, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$fam_af, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$fam_af, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$fam_af, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$fam_af, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$fam_af, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$fam_af, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Stranger affiliative:
+
+```{r}
+cor.test(WRM_temperament$stranger_af, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$stranger_af, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$stranger_af, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$stranger_af, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$stranger_af, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$stranger_af, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$stranger_af, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$stranger_af, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$stranger_af, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$stranger_af, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$stranger_af, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Responsive:
+
+```{r}
+cor.test(WRM_temperament$responsive, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$responsive, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$responsive, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$responsive, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$responsive, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$responsive, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$responsive, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$responsive, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$responsive, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$responsive, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$responsive, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Novel object:
+
+```{r}
+cor.test(WRM_temperament$no_obj, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$no_obj, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Chemosensory:
+
+```{r}
+cor.test(WRM_temperament$chemosensory, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$chemosensory, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Conspecific affiliative:
+
+```{r}
+cor.test(WRM_temperament$con_af, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$con_af, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Conspecific aggressive (conspecific and food aggressive):
+
+```{r}
+cor.test(WRM_temperament$cons_ag, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$cons_ag, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$cons_ag, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$cons_ag, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$cons_ag, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$cons_ag, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$cons_ag, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$cons_ag, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$cons_ag, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$cons_ag, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$cons_ag, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Conspecific fearful:
+
+```{r}
+cor.test(WRM_temperament$con_ff, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$con_ff, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Vocal:
+
+```{r}
+cor.test(WRM_temperament$vocal, WRM_temperament$freq.pant, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$freq.olfact_obj, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$freq.olfact_other, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$freq.advance_direct, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$freq.contact_inx, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$prop.near, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$prop.stimulated, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$prop.active, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$prop.inactive, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$prop.gatewait, method = "spearman")
+cor.test(WRM_temperament$vocal, WRM_temperament$latency_sec, method = "spearman")
+```
+
+Correlations with freq. of attack in WR:
+
+```{r}
+cor.test(WRM_temperament$freq.attack, WRM_temperament$PC1, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$PC2, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$PC3, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$PC4, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$active, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$aggressive, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$fam_af, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$responsive, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$stranger_af, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$fam_ff, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$stranger_ff, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$con_ff, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$stereotypies, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$investigative, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$no_obj, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$chemosensory, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$con_af, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$cons_ag, method = "spearman")
+
+cor.test(WRM_temperament$freq.attack, WRM_temperament$vocal, method = "spearman")
+```
+
+## WR Prop.Near and PC3 cor
+
+```{r}
+WR_near_PC3_int <- lm(PC3 ~ prop.near * size, data = WRM_temperament)
+```
+
+```{r}
+summary(WR_near_PC3_int)
+anova(WR_near_PC3_int)
+```
+
+```{r}
+WR_near_PC3 <- lm(PC3 ~ prop.near, data = WRM_temperament)
+```
+
+```{r}
+summary(WR_near_PC3)
+anova(WR_near_PC3)
+```
+
+## 1. Load Social husbandry survey data
+
+```{r}
+social_hus <- read.csv("~/Husbandry_housing.csv")
+```
+
+```{r}
+social_hus <- social_hus %>% dplyr::select(inst_id, 
+                               rhino_id, enrichment_program, 
+                               enrichment_provided_times_per_number, 
+                               enrichment_provided_times_per_scale,
+                            enrichment_experiences_behaviors_encouraged,
+                      enrichment_experiences_behaviors_encouraged_other)
+```
+
+Mutate as numeric
+
+```{r}
+social_hus <- social_hus %>% mutate(enrichment_provided_times_per_number = as.numeric(enrichment_provided_times_per_number))
+```
+
+Create new column "enrichment_week" and if Day, multiply x7 for weekly if Week, keep same number
+
+```{r}
+social_hus <- social_hus %>% mutate(enrichment_week = case_when(
+  enrichment_provided_times_per_scale == "Day" ~ (enrichment_provided_times_per_number*7),
+  enrichment_provided_times_per_scale == "Week" ~ enrichment_provided_times_per_number,
+  enrichment_provided_times_per_scale == "Month" ~
+    (enrichment_provided_times_per_number/4),
+  is.na(enrichment_provided_times_per_number) ~ 0
+  ))
+```
+
+## 2. Join Social survey data to BRM_temperament
+
+First, remove any variables we're not interested in:
+
+```{r}
+BRM_ss <- left_join(BRM_temperament, social_hus, by = "rhino_id")
+```
+
+Graph and show row#
+
+```{r}
+BRM_ss %>% ggplot(aes(enrichment_week, latency_sec)) + 
+  geom_point() + 
+  geom_text_repel(aes(label = rownames(BRM_ss))) + 
+  geom_smooth(method = 'glm')
+```
+
+Filter out Doppsee because she was in heat the week prior and smelling Phineus (he was tested 1st in that enclosure)
+
+```{r}
+BRM_ss <- BRM_ss %>% filter(rhino_id != "Black-947")
+```
+
+```{r}
+BRM_ss %>% ggplot(aes(latency_sec)) + geom_histogram()
+```
+
+```{r}
+BRM_ss %>% ggplot(aes(enrichment_week, latency_sec)) + geom_point() + geom_text_repel(aes(label = rownames(BRM_ss))) + geom_smooth(method = glm)
+```
+
+Now let's model it
+
+```{r}
+enrich_latency <- glm.nb(latency_sec ~ enrichment_week + 
+                           offset(log_durationsec),
+                     data = BRM_ss)
+```
+
+```{r}
+summary(enrich_latency)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(enrich_latency)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Model looks good
+
+Now, let's graph the model with predictions
+
+# Graph
+
+```{r}
+pred_enrich_lat <- ggpredict(enrich_latency, terms = c("enrichment_week"), type = "fixed")
+```
+
+```{r}
+ggplot(pred_enrich_lat,aes(x, predicted)) +  
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) + 
+  theme_ggeffects() +
+  xlab("Enrichment per week") +
+  ylab("Latency to approach (sec)") +
+  theme(text = element_text(family = "serif")) +
+  theme(text = element_text(size = 16))
+```
+
+```{r}
+enrich_cont <- glm.nb(freq.contact_inx ~ enrichment_week + offset(log_durationsec),
+                     data = BRM_ss)
+```
+
+```{r}
+summary(enrich_cont)
+
+simulationOutput <- simulateResiduals(enrich_cont)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not a good model if we only include enrichment per week in the model
+
+```{r}
+B_no3.4b <- glm.nb(olfact_obj_NO ~ age +
+                  access *size + enrichment_week + 
+                  offset(log_duration), 
+                  data = BRM_ss)
+```
+
+```{r}
+B_no3.4 <- glm.nb(olfact_obj_NO ~ age +
+                  access *size + 
+                  offset(log_duration), 
+                  data = BRM_ss)
+```
+
+```{r}
+AIC(B_no3.4b, B_no3.4)
+```
+
+Now, let's look at the other variables that were correlated with latency to approach in BR, are they correlated to enrichment_week which is correlated with latency?
+
+```{r}
+BRM_ss %>% ggplot(aes(enrichment_week, con_ff)) + geom_point()
+BRM_ss %>% ggplot(aes(enrichment_week, vocal)) + geom_point()
+```
+
+This is only 6 BR
+
+```{r}
+BRM_ss %>% ggplot(aes(enrichment_week, calm)) + geom_point()
+```
+
+No obvious correlation between any of them
+
+```{r}
+cor.test(BRM_ss$calm, BRM_ss$enrichment_week, method = "pearson")
+cor.test(BRM_ss$con_ff, BRM_ss$enrichment_week, method = "pearson")
+cor.test(BRM_ss$vocal, BRM_ss$enrichment_week, method = "pearson")
+cor.test(BRM_ss$latency_sec, BRM_ss$enrichment_week, method = "pearson")
+```
+
+No significant correlation between any of them

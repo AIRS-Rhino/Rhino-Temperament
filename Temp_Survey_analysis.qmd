@@ -1,0 +1,1680 @@
+---
+title: "Temp_Survey_analysis"
+author: "Kelly Chimpen Mac Leod"
+format: html
+editor: visual
+---
+
+Note: enter PATH where file was saved to run code in "Upload files" section
+
+# Remove objects
+
+```{r}
+rm(list = ls())
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+# Install packages
+
+```{r}
+#install.packages("gridExtra")
+#install.packages("ggfortify")
+#install.packages("stats")
+#install.packages("factoextra")
+#install.packages("corrplot")
+#install.packages("corrr")
+#install.packages("ggcorrplot")
+#install.packages("FactoMineR")
+#install.packages("tidyverse")
+#install.packages("broom")
+#install.packages("patchwork")
+#install.packages("lubridate")
+#install.packages("ggiraphExtra")
+#install.packages("pscl")
+#install.packages("MASS")
+#install.packages("car")
+#install.packages("modelr")
+#install.packages("rstatix")
+#install.packages("FSA")
+#install.packages("DHARMa")
+#install.packages("emmeans")
+#install.packages("pscl")
+#install.packages("knitr")
+#install.packages("rmarkdown")
+#install.packages("htmltools")
+#install.packages("superb")
+#install.packages("ggeffects")
+#install.packages("vegan")
+```
+
+# `Library` packages
+
+```{r}
+library(gridExtra)
+library(corrplot)
+library(ggplot2)
+library(ggfortify)
+library(stats)
+library(factoextra)
+library('corrr')
+library(ggcorrplot)
+library("FactoMineR")
+library(tidyverse)
+library(broom)
+library(patchwork)
+library(lubridate)
+library(lme4)
+library(lmerTest)
+library(ggiraphExtra)
+library(ggeffects)
+library(ggpubr)
+library(MASS)
+library(car)
+library(modelr)
+library(rstatix)
+library(FSA)
+library(DHARMa)
+library(splines)
+library("emmeans")
+library("pscl")
+library("knitr")
+library("rmarkdown")
+library('htmltools')
+library('superb')
+library('ggeffects')
+library('vegan')
+```
+
+# Upload files
+
+Upload clean temperament survey which has 1 row per rhino using the median.
+
+All rhinos:
+
+```{r}
+temp <- read.csv("~/Temp_Survey_final.csv")
+```
+
+Divide survey by species using the species column:
+
+```{r}
+w.temp <- temp %>% 
+  filter(species == "White")
+```
+
+```{r}
+b.temp <- temp %>% 
+  filter(species == "Black")
+```
+
+# PRE DATA ANALYSIS
+
+## Species difference
+
+Use the `wilcox.test` function to run Mann-Whitney U test to compare traits between species
+
+```{r}
+wilcox.test(active ~ species, data = temp) # not significant
+```
+
+```{r}
+wilcox.test(calm ~ species, data = temp) #significant
+```
+
+```{r}
+temp %>% ggplot(aes(species,calm, color=species)) + 
+  geom_boxplot()
+```
+
+```{r}
+wilcox.test(investigative ~ species, data = temp) #not significant
+```
+
+```{r}
+wilcox.test(sleep ~ species, data = temp) #not significant
+```
+
+```{r}
+wilcox.test(stereotypies ~ species, data = temp) #significant
+```
+
+```{r}
+temp %>% ggplot(aes(species,stereotypies, color=species)) + 
+  geom_boxplot()
+```
+
+```{r}
+wilcox.test(assertive ~ species, data = temp) #not significant
+```
+
+```{r}
+wilcox.test(chemosensory ~ species, data = temp) #not significant
+```
+
+```{r}
+wilcox.test(con_af ~ species, data = temp) #not significant
+```
+
+```{r}
+wilcox.test(con_ag ~ species, data = temp) #not significant
+```
+
+```{r}
+wilcox.test(con_ff ~ species, data = temp) #not significant
+```
+
+```{r}
+wilcox.test(food_ag ~ species, data = temp) #trend
+```
+
+```{r}
+wilcox.test(no_obj ~ species, data = temp) #significant
+```
+
+```{r}
+temp %>% ggplot(aes(species,scale(no_obj), color=species)) + 
+  geom_boxplot()
+```
+
+```{r}
+wilcox.test(pre_obj ~ species, data = temp) #not significant
+```
+
+```{r}
+wilcox.test(social ~ species, data = temp) #not significant
+```
+
+```{r}
+wilcox.test(vocal ~ species, data = temp) #significant
+```
+
+```{r}
+temp %>% ggplot(aes(species,vocal, color=species)) + 
+  geom_boxplot() 
+```
+
+```{r}
+wilcox.test(fam_af ~ species, data = temp) #trend
+```
+
+```{r}
+wilcox.test(fam_ag ~ species, data = temp) #significant
+```
+
+```{r}
+temp %>% ggplot(aes(species,fam_ag, color=species)) + 
+  geom_boxplot()
+```
+
+```{r}
+wilcox.test(fam_ff ~ species, data = temp) #not significant
+```
+
+```{r}
+wilcox.test(responsive ~ species, data = temp) #not significant
+```
+
+```{r}
+wilcox.test(stranger_af ~ species, data = temp) #significant
+```
+
+```{r}
+temp %>% ggplot(aes(species,stranger_af, color=species)) + 
+  geom_boxplot()
+```
+
+```{r}
+wilcox.test(stranger_ag ~ species, data = temp) #significant
+```
+
+```{r}
+temp %>% ggplot(aes(species,stranger_ag, color=species)) + 
+  geom_boxplot()
+```
+
+```{r}
+wilcox.test(stranger_ff ~ species, data = temp) #not significant
+```
+
+Calm, stereotypies, novel object, vocal, familiar aggressive, stranger affiliative, and stranger aggressive are significantly different between species.
+
+## Save graphs:
+
+```{r}
+stereo_sp <- temp %>% ggplot(aes(species,stereotypies, color=species)) + 
+  geom_boxplot() +
+  theme_ggeffects() +
+  labs(x='Species',
+       y='Stereotypies',
+       color = 'Species') +
+  theme(text = element_text(family = "serif")) +
+  theme(text = element_text(size = 12))
+```
+
+```{r}
+fam_ag_sp <- temp %>% ggplot(aes(species,fam_ag, color=species)) + 
+  geom_boxplot() +
+  theme_ggeffects() +
+  labs(x='Species',
+       y='Familiar aggressive',
+       color = 'Species') +
+  theme(text = element_text(family = "serif")) +
+  theme(text = element_text(size = 12))
+```
+
+```{r}
+str_ag_sp <- temp %>% ggplot(aes(species,stranger_ag, color=species)) + 
+  geom_boxplot() +
+  theme_ggeffects() +
+  labs(x='Species',
+       y='Stranger aggressive',
+       color = 'Species') +
+  theme(text = element_text(family = "serif")) +
+  theme(text = element_text(size = 12))
+```
+
+```{r}
+calm_sp <- temp %>% ggplot(aes(species,calm, color=species)) + 
+  geom_boxplot() +
+  theme_ggeffects() +
+  labs(x='Species',
+       y='Calm',
+       color = 'Species') +
+  theme(text = element_text(family = "serif")) +
+  theme(text = element_text(size = 12))
+```
+
+```{r}
+str_af_sp <- temp %>% ggplot(aes(species,stranger_af, color=species)) + 
+  geom_boxplot() +
+  theme_ggeffects() +
+  labs(x='Species',
+       y='Stranger affiliative',
+       color = 'Species') +
+  theme(text = element_text(family = "serif"))+
+  theme(text = element_text(size = 12)) 
+```
+
+```{r}
+no_obj_sp <- temp %>% ggplot(aes(species,no_obj, color=species)) + 
+  geom_boxplot() +
+  theme_ggeffects() +
+  labs(x='Species',
+       y='Novel object',
+       color = 'Species') +
+  theme(text = element_text(family = "serif")) +
+  theme(text = element_text(size = 12))
+```
+
+```{r}
+vocal_sp <- temp %>% ggplot(aes(species,vocal, color=species)) + 
+  geom_boxplot() +
+  theme_ggeffects() +
+  labs(x='Species',
+       y='Vocal',
+       color = 'Species') +
+  theme(text = element_text(family = "serif"))+
+  theme(text = element_text(size = 12))
+```
+
+```{r}
+combined_sp_survey <- ((stereo_sp+ fam_ag_sp) / (str_af_sp + str_ag_sp)/
+                         (calm_sp+ no_obj_sp) / (vocal_sp + plot_spacer())) +
+plot_layout(guides='collect') &
+  theme(legend.position='bottom')
+
+print(combined_sp_survey)
+```
+
+Add annotation
+
+```{r}
+combined_sp_survey <- combined_sp_survey+
+  plot_annotation(tag_levels = 'A')
+
+print(combined_sp_survey)
+```
+
+```{r}
+#ggsave(combined_sp_survey, filename = "~/combined_sp_survey.tiff",  height = 6, width = 10, units = "in", dpi = 400)
+```
+
+# DATA ANALYSIS
+
+## BLACK RHINO
+
+### Pre-data analysis
+
+### 1. Temperament survey data:
+
+Continuous variables - Pearson's correlation
+
+```{r}
+cor.test(b.temp$lat, b.temp$age, method = "pearson")
+cor.test(b.temp$long, b.temp$age, method = "pearson")
+```
+
+There's no relationship between location and age.
+
+Categorical variables - Chi square test
+
+```{r}
+chisq.test(b.temp$inst_id, b.temp$housing) #significant
+chisq.test(b.temp$inst_id, b.temp$age) #significant
+chisq.test(b.temp$inst_id, b.temp$sex) #not significant
+chisq.test(b.temp$inst_id, b.temp$long) #significant
+chisq.test(b.temp$inst_id, b.temp$lat) #significant
+```
+
+Significant between institution and housing. Significant between institution and longitude and latitude. However, institution and latitude and longitude are telling us the same information which is location. Thus, I'm removing both latitude and longitude.
+
+```{r}
+chisq.test(b.temp$housing, b.temp$age)
+chisq.test(b.temp$housing, b.temp$sex)
+chisq.test(b.temp$housing, b.temp$inst_id)
+```
+
+Housing style is significantly correlated with institution ID.
+
+```{r}
+chisq.test(b.temp$sex, b.temp$age)
+chisq.test(b.temp$sex, b.temp$inst_id)
+```
+
+Not significant. Both variables were retained.
+
+Including institution as a random effect whenever it makes a significant different after assessing it using `Anova()` to compare model with and without random effect
+
+### 2. Combined dataset:
+
+Check which variables should and should not be considered depending on count.
+
+```{r}
+count(b.temp,birth_type)
+```
+
+Only 4 wild rhinos out of 50. Hence, birth type wasn't assessed in BR.
+
+```{r}
+count(b.temp,sex)
+```
+
+Continuous variables - Pearson correlation coefficient.
+
+```{r}
+chisq.test(b.temp$inst_id, b.temp$age)
+```
+
+Institution and age are correlated.As mentioned above, institution will be included as a random effect in models where it makes a difference.
+
+### 3. Scores IQR
+
+```{r}
+IQR(b.temp$PC1)
+IQR(b.temp$PC2)
+IQR(b.temp$PC3)
+```
+
+```{r}
+summary(b.temp$PC1)
+summary(b.temp$PC2)
+summary(b.temp$PC3)
+```
+
+```{r}
+quantile(b.temp$PC1, 0.25)
+quantile(b.temp$PC1, 0.75)
+```
+
+```{r}
+quantile(b.temp$PC2, 0.25)
+quantile(b.temp$PC2, 0.75)
+```
+
+```{r}
+quantile(b.temp$PC3, 0.25)
+quantile(b.temp$PC3, 0.75)
+```
+
+# DEMO-ENVIRO FACTORS
+
+We are keeping 3 fixed variables which are age, sex, and housing. Institution ID is added as a random effect.
+
+### PC1:
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+b.temp %>% ggplot(aes(PC1)) + geom_histogram()
+```
+
+Right skewed distribution.
+
+```{r}
+b.temp %>%
+  ggplot(aes(age, PC1, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_ggeffects()
+```
+
+No trend.
+
+```{r}
+b.temp %>%
+  ggplot(aes(age, PC1, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_ggeffects()
+```
+
+Seems like as age increases, PC1 decreases in females and increases in males. But points are all over the graph. Let's model age and sex as an interaction.
+
+```{r}
+b.temp %>%
+  ggplot(aes(housing, PC1, color = age)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_ggeffects()
+```
+
+Socially housed black rhinos seem to score higher on PC1.
+
+#### Modelling:
+
+Including random effect.
+
+```{r}
+B1.1 <- lmer(PC1 ~ housing + age * sex + (1|inst_id), data = b.temp)
+```
+
+As interaction between sex and age.
+
+```{r}
+B1.2a <- lm(PC1 ~ sex * age + housing, data = b.temp)
+```
+
+No interaction between sex and age.
+
+```{r}
+B1.2 <- lm(PC1 ~ sex + age + housing, data = b.temp)
+```
+
+```{r}
+AIC(B1.2, B1.2a) #interaction has lower AIC
+```
+
+Let's look whether random effect should be included or excluded.
+
+```{r}
+summary(B1.1) #0 variance
+```
+
+```{r}
+anova(B1.1, B1.2)
+anova(B1.1, B1.2a) #no difference
+```
+
+Institution explains 0 variance. Thus, shouldn't be included in the model.
+
+```{r}
+B1.3a <- lm(PC1 ~ sex * age, data = b.temp)
+```
+
+```{r}
+B1.4 <- lm(PC1 ~ housing, data = b.temp)
+```
+
+```{r}
+B1.5 <- lm(PC1 ~ 1, data = b.temp)
+```
+
+```{r}
+AIC( B1.4, B1.2a, B1.3a, B1.5)
+```
+
+#### Diagnostic plots:
+
+```{r}
+par(mfrow = c(2,2))
+plot(B1.2a)
+summary(B1.2a)
+```
+
+```{r}
+Anova(B1.2a)
+```
+
+Full model includes the interaction between age and sex, plus housing. None of the variables are significant and model explains only 0.2% of PC1.
+
+```{r}
+summary(B1.4)
+plot(B1.4)
+```
+
+Housing does not significantly explain PC1. R\^2 is very small and p-value \> 0.05. Neither the interaction nor their individual effect significantly affect PC1. p-value \> 0.05.
+
+```{r}
+summary(B1.5)
+plot(B1.5)
+```
+
+Right tail of QQ plot is off the diagonal line.
+
+```{r}
+Anova(B1.5)
+```
+
+```{r}
+par(mfrow = c(1,1))
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B1.2a)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B1.4)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B1.5)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Even though DHARMa is mostly used for complex models, it can also be used for simple 'lm' models. (https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html#lm-and-glm) shows lm is supported. In this case, I used it to supplement my QQplots to determine whether it's acceptable or not.
+
+Null model was the best model and passed diagnostics for PC1.
+
+### PC2:
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+b.temp %>% ggplot(aes(PC2)) + geom_histogram()
+```
+
+Somewhat normal distribution.
+
+```{r}
+b.temp %>%
+  ggplot(aes(sex, PC2, color = housing)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+Females seem to score higher than males.
+
+```{r}
+b.temp %>%
+  ggplot(aes(age, PC2, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+No interaction.
+
+```{r}
+b.temp %>%
+  ggplot(aes(age, PC2, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+No interaction.
+
+#### Modelling:
+
+```{r}
+B2 <- lmer(PC2 ~ age + sex + housing + (1|inst_id), data = b.temp)
+B2.1 <- lm(PC2 ~ age + sex + housing, data = b.temp)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(B2)
+anova(B2, B2.1)
+```
+
+Random effect should not be included. There's no difference between model with and without RE as shown by the anova results.
+
+```{r}
+drop1(B2.1)
+```
+
+```{r}
+B2.2 <- lm(PC2 ~ sex + housing, data = b.temp)
+```
+
+```{r}
+drop1(B2.2)
+```
+
+```{r}
+B2.3 <- lm(PC2 ~ sex, data = b.temp)
+```
+
+```{r}
+B2.4 <- lm(PC2 ~ 1, data = b.temp)
+```
+
+Choose best model.
+
+```{r}
+AIC(B2.1, B2.2, B2.3, B2.4)
+```
+
+Lowest AIC model is B2.3, which includes sex.
+
+#### Diagnostic plots:
+
+```{r}
+par(mfrow = c(2,2))
+```
+
+```{r}
+summary(B2.1)
+```
+
+```{r}
+Anova(B2.1)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B2.1)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+This is the full model which include age, sex and housing. Neither age not housing are significant in this model. Sex is significant. However, model as a whole is not significant p-value \> 0.05.
+
+```{r}
+summary(B2.3)
+```
+
+```{r}
+Anova(B2.3)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B2.3)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Sex explains 13% (R\^2 = 0.1339) of PC2. Males score 0.4992 + (-1.0191) = -0.5199, and females 0.4992 on PC2. This model has a p-value \< 0.05.
+
+```{r}
+summary(B2.2)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B2.2)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+In this model with sex and housing, sex is the only significant variable. However, this model's p-value \< 0.05.
+
+Graph simplest model:
+
+```{r}
+ggeffects::ggeffect(B2.3, terms = "sex")
+```
+
+```{r}
+effects <- ggeffects::ggeffect(B2.3, terms = "sex")
+```
+
+Convert to dataframe:
+
+```{r}
+df <- as.data.frame(effects)
+```
+
+Boxplot:
+
+```{r}
+ggplot(df, aes(x=x, y=predicted)) +
+  geom_boxplot() + 
+  geom_errorbar(aes(ymin=predicted-std.error, ymax=predicted+std.error), width=0.2) +
+  geom_point(data = b.temp, aes(sex, PC2), color = "turquoise") +
+  ylab("Predicted PC2") +
+  xlab("Sex") + 
+  theme_ggeffects() #raw data points in turquoise
+```
+
+Thick horizontal line is prediction from B2.3 model which includes sex only. Graph includes error bars. Raw data points are shown in turquoise.
+
+```{r}
+ggplot(b.temp, aes(sex, PC2, fill=sex)) +
+  geom_boxplot() + ylim(-3, 2.5) + theme_ggeffects()
+```
+
+Above is the simple boxplot looking at the raw data only.
+
+```{r}
+predictions_B2.3 <- ggpredict(B2.3, terms = "sex", add.data = F)
+```
+
+#### Graph
+
+```{r}
+ggplot(predictions_B2.3, aes(x = x, y = predicted)) +
+  geom_boxplot(size = .5, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), 
+                width = 0.1)  +
+  theme_ggeffects() +
+    labs(x = "Sex", 
+       y = "PC Score on Inactive / Active") +
+  theme(text = element_text(family = "serif")) +
+  showSignificance( c(1,2), 1.2, -0.05, "*") +
+  ylim(-1,1.25) +
+  theme(text = element_text(size = 15))
+```
+
+Save plot:
+
+```{r}
+BR_CTI2 <- ggplot(predictions_B2.3, aes(x = x, y = predicted)) +
+  geom_boxplot(size = .5, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), 
+                width = 0.1)  +
+  theme_ggeffects() +
+    labs(x = "Sex", 
+       y = "PC Score on Inactive / Active") +
+  theme(text = element_text(family = "serif")) +
+  ylim(-1,1.25) +
+  theme(text = element_text(size = 15))
+```
+
+This plot shows only the predicted values and error bars using B2.3 model (sex).
+
+### PC3:
+
+Visualization:
+
+```{r}
+b.temp %>% ggplot(aes(PC3)) + geom_histogram()
+```
+
+Normally distributed.
+
+```{r}
+b.temp %>%
+  ggplot(aes(sex, PC3, color = housing)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+No difference.
+
+```{r}
+b.temp %>%
+  ggplot(aes(age, PC3, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_ggeffects()
+```
+
+Interaction between housing and age.
+
+```{r}
+b.temp %>%
+  ggplot(aes(age, PC3, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+No interaction.
+
+#### Modelling:
+
+```{r}
+B3 <- lmer(PC3 ~ sex + age * housing + (1|inst_id), data = b.temp)
+
+B3.1 <- lm(PC3 ~ sex + age * housing , data = b.temp)
+```
+
+Determine if random effect should be included.
+
+```{r}
+par(mfrow = c(1,1))
+```
+
+```{r}
+summary(B3)
+```
+
+```{r}
+anova(B3, B3.1)
+```
+
+Institution ID should not be included as RE as anova shows no difference.
+
+```{r}
+drop1(B3.1)
+```
+
+```{r}
+B3.2 <- lm(PC3 ~ age * housing, data = b.temp)
+```
+
+```{r}
+B3.3 <- lm(PC3 ~ housing, data = b.temp)
+```
+
+```{r}
+B3.4 <- lm(PC3 ~ age, data = b.temp)
+```
+
+```{r}
+B3.5 <- lm(PC3 ~ 1, data = b.temp)
+```
+
+```{r}
+AIC( B3.1, B3.2, B3.3, B3.4, B3.5)
+```
+
+#### Diagnostic plots:
+
+```{r}
+par(mfrow = c(2,2))
+```
+
+```{r}
+summary(B3.1)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B3.1)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Model passed diagnostics. However, the lines on the residuals v. predicted are not parallel.
+
+Full model does not explain PC3 (negative R\^2).
+
+```{r}
+summary(B3.5)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B3.5)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Passed diagnostics.
+
+```{r}
+summary(B3.3)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B3.3)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Levene test for homogeneity of variance is significant.
+
+```{r}
+summary(B3.4)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B3.4)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B3.2)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Passed but lines are not parallel in residual v. predicted graph.
+
+The null model is the best model and passed diagnostics.
+
+## WHITE RHINO
+
+###Pre-data analysis
+
+### 1. Temperament survey data:
+
+Continuous variables - Pearson's correlation
+
+```{r}
+cor.test(w.temp$lat, w.temp$age, method = "pearson")
+cor.test(w.temp$long, w.temp$age, method = "pearson")
+```
+
+Categorical variables - Chi square test
+
+```{r}
+chisq.test(w.temp$inst_id, w.temp$housing) #significant
+chisq.test(w.temp$inst_id, w.temp$age) #significant
+chisq.test(w.temp$inst_id, w.temp$sex) #not significant
+chisq.test(w.temp$inst_id, w.temp$long) #significant
+chisq.test(w.temp$inst_id, w.temp$lat) #significant
+```
+
+Significant between institution and housing. Significant between institution and longitude and latitude. However, institution and latitude and longitude are telling us the same information which is location. Thus, I'm removing both latitude and longitude as variables.
+
+```{r}
+chisq.test(w.temp$housing, w.temp$age)
+```
+
+Significant between housing and age. Recommendations to house females socially and males solitarily.
+
+```{r}
+chisq.test(w.temp$sex, w.temp$age)
+```
+
+Not significant.
+
+Check which variables should and should not be considered depending on count.
+
+```{r}
+count(w.temp,birth_type) #enoguh wild individuals to include it
+count(w.temp,sex) #almost twice as many females
+```
+
+Categorical variables - Chi square test
+
+```{r}
+chisq.test(w.temp$age, w.temp$sex)
+chisq.test(w.temp$age, w.temp$housing) 
+chisq.test(w.temp$age, w.temp$inst_id) #significant
+```
+
+Significant correlation between age and birth type. This might be coincidental so I'm keeping them as independent variables.
+
+```{r}
+chisq.test(w.temp$sex, w.temp$housing) #significant
+chisq.test(w.temp$sex, w.temp$inst_id)
+```
+
+Significant correlation between sex and housing (recommended by husbandry manual).
+
+# DEMO-ENVIRO FACTORS
+
+### PC1:
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.temp %>% ggplot(aes(scale(PC1))) + geom_histogram()
+```
+
+Right skewed.
+
+```{r}
+w.temp %>%
+  ggplot(aes(sex, PC1, color = housing)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.temp %>%
+  ggplot(aes(age, PC1, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.temp %>%
+  ggplot(aes(age, PC1, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.temp %>%
+  ggplot(aes(birth_type, PC1, color = sex)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+#### Modelling:
+
+```{r}
+W1 <- lmer(PC1 ~ housing + age + sex + birth_type+ (1|inst_id), data = w.temp)
+
+W1.2 <- lm(PC1 ~ sex + age + housing + birth_type , data = w.temp)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(W1)
+anova(W1, W1.2)
+ranova(W1)
+```
+
+Include institution ID in model.
+
+```{r}
+drop1(W1)
+```
+
+Remove birth type
+
+```{r}
+W1.3 <- lmer(PC1 ~ age + sex + housing + (1|inst_id), data = w.temp)
+W1.3a <- lm(PC1 ~ age + sex + housing, data = w.temp)
+```
+
+```{r}
+anova(W1.3, W1.3a)
+ranova(W1.3)
+```
+
+```{r}
+drop1(W1.3)
+```
+
+```{r}
+W1.4 <- lmer(PC1 ~ housing + sex + (1|inst_id), data = w.temp)
+```
+
+```{r}
+W1.5 <- lmer(PC1 ~ housing +  (1|inst_id), data = w.temp)
+```
+
+```{r}
+W1.6 <- lmer(PC1 ~ 1 + (1|inst_id), data = w.temp)
+W1.6a <- lm(PC1 ~ 1, data = w.temp)
+```
+
+```{r}
+AIC(W1, W1.2, W1.3, W1.3a, W1.4, W1.5, W1.6, W1.6a)
+```
+
+```{r}
+anova(W1)
+```
+
+W1.5 best model with housing.
+
+#### Diagnostic plots:
+
+```{r}
+simulationOutput <- simulateResiduals(W1.5)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput)
+```
+
+Levene test for homogeneity of variance is significant.
+
+```{r}
+simulationOutput <- simulateResiduals(W1)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostics
+
+```{r}
+simulationOutput <- simulateResiduals(W1.4)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Failed Levene Test.
+
+```{r}
+Anova(W1.4)
+```
+
+```{r}
+summary(W1.3)
+anova(W1.3)
+```
+
+Plot: best model didn't pass diagnostics, though.
+
+```{r}
+WR_CTI1 <- ggplot(predictions_W1.4, aes(x = x, y = predicted, color = group, fill = group)) +
+ geom_boxplot(size = .5, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), 
+                width = 0.1,  
+                position = position_dodge(0.5)) +
+  scale_color_manual(values = c("green4", "darkviolet")) +
+  scale_fill_manual(values = c("green4", "darkviolet")) +
+  theme_ggeffects() +
+    labs(color = "Sociality",
+         fill = "Sociality",
+         x = "Sex", 
+       y = "Anthrophobic / Anthrophilic") +
+  theme(text = element_text(family = "serif"))  +
+  theme(text = element_text(size = 15))
+```
+
+### PC2:
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.temp %>%  ggplot(aes(PC2)) + geom_histogram()
+```
+
+Looks normal except for 3 outliers.
+
+```{r}
+w.temp %>%
+  ggplot(aes(sex, PC2, color = housing)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.temp %>%
+  ggplot(aes(age, PC2, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.temp %>%
+  ggplot(aes(age, PC2, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_ggeffects()
+```
+
+#### Modelling:
+
+```{r}
+W2 <- lmer(PC2 ~ housing + age + sex + birth_type +(1|inst_id), data = w.temp)
+
+W2.1 <- lm(PC2 ~ sex + age + birth_type+ housing, data = w.temp)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(W2)
+anova(W2, W2.1)
+```
+
+Institution should not be included as random effect.
+
+```{r}
+drop1(W2.1)
+```
+
+```{r}
+W2.2 <- lm(PC2 ~ birth_type +sex + age, data = w.temp)
+```
+
+```{r}
+drop1(W2.2)
+```
+
+```{r}
+W2.3 <- lm(PC2 ~ sex +age, data = w.temp)
+```
+
+```{r}
+drop1(W2.3)
+```
+
+```{r}
+W2.4 <- lm(PC2 ~ age, data = w.temp)
+```
+
+```{r}
+W2.5 <- lm(PC2 ~ 1, data = w.temp)
+```
+
+```{r}
+AIC(W2.1, W2.2, W2.3, W2.4, W2.5)
+```
+
+Model with sex and age is best fit (W2.2)
+
+#### Diagnostic plots:
+
+```{r}
+simulationOutput <- simulateResiduals(W2.1)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput)
+```
+
+Combined adjusted quantile test is significant
+
+```{r}
+summary(W2.1)
+```
+
+```{r}
+anova(W2.1)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W2.2)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostics
+
+```{r}
+summary(W2.2)
+```
+
+```{r}
+anova(W2.2)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W2.3)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput)
+```
+
+```{r}
+summary(W2.3)
+```
+
+Good model. Sex and age are significant. At age 0, females score 0.96 on PC2. Males score 0.495 more than females on PC2. As rhinos age, PC2 increases by 0.06 per year.
+
+Graph models:
+
+```{r}
+plot(ggeffect(W2.2, terms = c("age", "sex"))) +
+  labs(x = "Age",
+       title = "Predicted: PC2")
+```
+
+#### Graph
+
+```{r}
+predictions_W2.2 <- ggpredict(W2.2, terms = c("age","sex"))
+```
+
+```{r}
+ggplot(predictions_W2.2, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
+  scale_color_manual(values = c("magenta", "turquoise1")) +
+  scale_fill_manual(values = c("magenta", "turquoise1")) +
+  theme_ggeffects() +
+    labs(color = "Sex",
+         fill = "Sex",
+         x = "Age", 
+       y = "Inactive / Active") +
+ theme(text = element_text(family = "serif")) +
+  theme(text = element_text(size = 15))
+```
+
+```{r}
+WR_CTI2 <- ggplot(predictions_W2.2, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
+  scale_color_manual(values = c("magenta", "turquoise1")) +
+  scale_fill_manual(values = c("magenta", "turquoise1")) +
+  theme_ggeffects() +
+    labs(color = "Sex",
+         fill = "Sex",
+         x = "Age", 
+       y = "PC Score on Inactive / Active") +
+ theme(text = element_text(family = "serif")) +
+  theme(text = element_text(size = 15))
+```
+
+### PC3:
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.temp %>% ggplot(aes(PC3)) + geom_histogram()
+```
+
+Normal distribution.
+
+```{r}
+w.temp %>%
+  ggplot(aes(sex, PC3, color = housing)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.temp %>%
+  ggplot(aes(age, PC3, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.temp %>%
+  ggplot(aes(age, PC3, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+#### Modelling:
+
+```{r}
+W3 <- lmer(PC3 ~ age + sex + housing + birth_type + (1|inst_id), data = w.temp)
+
+W3.1 <- lm(PC3 ~ age + sex + housing + birth_type , data = w.temp)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(W3)
+anova(W3, W3.1)
+```
+
+Remove institution ID as random effect.
+
+```{r}
+drop1(W3.1)
+```
+
+```{r}
+W3.2 <- lm(PC3 ~ age + sex + housing  , data = w.temp)
+```
+
+```{r}
+W3.3 <- lm(PC3 ~ age + housing, data = w.temp)
+```
+
+```{r}
+drop1(W3.3)
+```
+
+```{r}
+W3.4 <- lm(PC3 ~ age, data = w.temp)
+```
+
+```{r}
+W3.5 <- lm(PC3 ~ 1, data = w.temp)
+```
+
+```{r}
+AIC( W3.1, W3.2, W3.3, W3.4, W3.5)
+```
+
+The best model includes age only.
+
+#### Diagnostic plots:
+
+```{r}
+par(mfrow = c(2,2))
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W3.1)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput)
+```
+
+Passed
+
+```{r}
+summary(W3.1)
+```
+
+```{r}
+anova(W3.1)
+```
+
+No variable can significantly explain PC3.
+
+```{r}
+simulationOutput <- simulateResiduals(W3.5)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostics.
+
+```{r}
+summary(W3.5)
+```
+
+Null model works best.
+
+```{r}
+simulationOutput <- simulateResiduals(W3.3)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput)
+```
+
+didn't pass.
+
+```{r}
+summary(W3.3)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W3.2)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput)
+```
+
+```{r}
+summary(W3.2)
+```
+
+Model doesn't explain PC3 either.
+
+Best model is null model
+
+Many raw data points are outside the line. Null model works best.
+
+### PC4:
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.temp %>% ggplot(aes(PC4)) + geom_histogram()
+```
+
+Normal distribution.
+
+```{r}
+w.temp %>%
+  ggplot(aes(sex, PC4, color = housing)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.temp %>%
+  ggplot(aes(age, PC4, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.temp %>%
+  ggplot(aes(housing, PC4, color = housing)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.temp %>%
+  ggplot(aes(age, PC4, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.temp %>%
+  ggplot(aes(birth_type, PC4, color = sex)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+#### Modelling:
+
+```{r}
+W4 <- lmer(PC4 ~ housing + age + sex +birth_type+ (1|inst_id), data = w.temp)
+
+W4.1 <- lm(PC4 ~ sex + age + housing +birth_type, data = w.temp)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(W4)
+anova(W4, W4.1)
+```
+
+Include random effect.
+
+```{r}
+drop1(W4)
+```
+
+```{r}
+W4.2a <- lmer(PC4 ~ sex + housing +birth_type + (1|inst_id), data = w.temp)
+```
+
+```{r}
+drop1(W4.2a)
+```
+
+```{r}
+W4.3a <- lmer(PC4 ~ housing +birth_type+ (1|inst_id), data = w.temp)
+```
+
+```{r}
+ranova(W4.3a)
+```
+
+```{r}
+drop1(W4.3a)
+```
+
+```{r}
+W4.4a <- lmer(PC4 ~ birth_type+ (1|inst_id), data = w.temp)
+```
+
+```{r}
+W4.5a <- lmer(PC4 ~ 1 + (1|inst_id), data = w.temp)
+```
+
+```{r}
+AIC(W4, W4.2a, W4.3a, W4.4a, W4.5a)
+```
+
+W4.4a is best model, which includes birth style and random effect.
+
+#### Diagnostic plots:
+
+```{r}
+par(mfrow = c(1,1))
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W4)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Passed diagnostic tests.
+
+```{r}
+summary(W4)
+```
+
+```{r}
+Anova(W4)
+```
+
+No significant variable.
+
+```{r}
+simulationOutput <- simulateResiduals(W4.4a)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Model with birth type did not pass diagnostics
+
+```{r}
+simulationOutput <- simulateResiduals(W4.3a)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Did not pass Levene test.
+
+```{r}
+simulationOutput <- simulateResiduals(W4.5a)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Passed all diagnostic tests.
+
+```{r}
+summary(W4.3a)
+summary(W4.4a)
+```
+
+```{r}
+anova(W4.1)
+anova(W4.4a)
+anova(W4.3a)
+```
+
+```{r}
+predict_W2.3a <- ggpredict(W4.3a, c("housing", "birth_type"), type = 'fixed')
+```
+
+```{r}
+ggplot(predict_W2.3a, aes(x, predicted, color=group, fill=group)) + geom_boxplot()
+```
+
+Null model is the best model. Thus, no variable explains PC4.
+
+# PLOTS
+
+For chosen models for PC2 in BR (sex) and WR (sex and age)
+
+```{r}
+BR_CTI2
+```
+
+```{r}
+WR_CTI1
+WR_CTI2
+```
+
+## Combine graphs
+
+```{r}
+combined_PC <- (BR_CTI2+ WR_CTI2) +
+  plot_annotation(tag_levels = 'A')
+
+print(combined_PC)
+```
+
+## Save graphs
+
+```{r}
+#ggsave(combined_PC, filename = "~/combined_PC.tiff", height = 4, width = 8, units = "in", dpi = 400)
+```
