@@ -1,0 +1,8060 @@
+---
+title: "Novel_Obj_analysis"
+author: "Kelly Chimpen Mac Leod"
+format: html
+editor: visual
+---
+
+Note: enter PATH where file was saved to run code in "Upload files" section
+
+# Remove objects
+
+```{r}
+rm(list = ls())
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+# Install packages
+
+```{r}
+#install.packages("gridExtra")
+#install.packages("ggfortify")
+#install.packages("stats")
+#install.packages("factoextra")
+#install.packages("corrplot")
+#install.packages("corrr")
+#install.packages("ggcorrplot")
+#install.packages("FactoMineR")
+#install.packages("tidyverse")
+#install.packages("broom")
+#install.packages("patchwork")
+#install.packages("lubridate")
+#install.packages("ggiraphExtra")
+#install.packages("pscl")
+#install.packages("MASS")
+#install.packages("car")
+#install.packages("modelr")
+#install.packages("rstatix")
+#install.packages("FSA")
+#install.packages("DHARMa")
+#install.packages("emmeans")
+#install.packages("pscl")
+#install.packages("knitr")
+#install.packages("rmarkdown")
+#install.packages("htmltools")
+#install.packages("superb")
+#install.packages("ggeffects")
+#install.packages("vegan")
+#install.packages("glmmTMB")
+```
+
+# `Library` packages
+
+```{r}
+library(gridExtra)
+library(corrplot)
+library(ggplot2)
+library(ggfortify)
+library(stats)
+library(factoextra)
+library('corrr')
+library(ggcorrplot)
+library("FactoMineR")
+library(tidyverse)
+library(broom)
+library(patchwork)
+library(lubridate)
+library(lme4)
+library(lmerTest)
+library(ggiraphExtra)
+library(ggeffects)
+library(ggpubr)
+library(MASS)
+library(car)
+library(modelr)
+library(rstatix)
+library(FSA)
+library(DHARMa)
+library(splines)
+library("emmeans")
+library("pscl")
+library("knitr")
+library("rmarkdown")
+library('htmltools')
+library('superb')
+library('ggeffects')
+library('vegan')
+library(glmmTMB)
+```
+
+# Upload files
+
+Upload clean novel object file. For black rhino:
+
+For white rhino:
+
+```{r}
+novelobj <- read.csv("C:/Users/Kelly/OneDrive - George Mason University - O365 Production/AIRS Wellbeing/PLOS One final documents/Novel_Obj_final.csv")
+```
+
+For black rhino:
+
+```{r}
+b.novelobj <- novelobj %>% filter(species == "Black")
+```
+
+For white rhino:
+
+```{r}
+w.novelobj <- novelobj %>% filter(species == "White")
+```
+
+# PRE DATA ANALYSIS
+
+## Enclosure type
+
+Black rhino:
+
+```{r}
+b.novelobj %>% filter(size == "S" & access == "Outdoor" ) %>% dplyr::select(rhino_id, size, access, freq.olfact_obj)
+b.novelobj %>% filter(size == "M" & access == "Outdoor" ) %>% dplyr::select(rhino_id, size, access, freq.olfact_obj)
+b.novelobj %>% filter(size == "L" & access == "Outdoor" ) %>% dplyr::select(rhino_id, size, access, freq.olfact_obj)
+```
+
+```{r}
+b.novelobj %>% filter(size == "S" & access == "Indoor" ) %>% dplyr::select(rhino_id, size, access, freq.olfact_obj)
+b.novelobj %>% filter(size == "M" & access == "Indoor" ) %>% dplyr::select(rhino_id, size, access, freq.olfact_obj)
+b.novelobj %>% filter(size == "L" & access == "Indoor" ) %>% dplyr::select(rhino_id, size, access, freq.olfact_obj)
+```
+
+White rhino:
+
+```{r}
+w.novelobj %>% filter(size == "S" & access == "Outdoor" ) %>% dplyr::select(rhino_id, size, access, freq.olfact_obj)
+w.novelobj %>% filter(size == "M" & access == "Outdoor" ) %>% dplyr::select(rhino_id, size, access, freq.olfact_obj)
+w.novelobj %>% filter(size == "L" & access == "Outdoor" ) %>% dplyr::select(rhino_id, size, access, freq.olfact_obj)
+```
+
+```{r}
+w.novelobj %>% filter(size == "S" & access == "Indoor" ) %>% dplyr::select(rhino_id, size, access, freq.olfact_obj)
+w.novelobj %>% filter(size == "M" & access == "Indoor" ) %>% dplyr::select(rhino_id, size, access, freq.olfact_obj)
+w.novelobj %>% filter(size == "L" & access == "Indoor" ) %>% dplyr::select(rhino_id, size, access, freq.olfact_obj)
+```
+
+## Species difference
+
+```{r}
+wilcox.test(richness ~ species, data = novelobj) #not significant but shows a trend with BR displaying more behaviors than WR
+```
+
+```{r}
+wilcox.test(diversity ~ species, data = novelobj)
+```
+
+```{r}
+novelobj %>% ggplot(aes(species, diversity)) + geom_boxplot()
+```
+
+Species diversity varies by species, with BR having higher behavioral diversity, meaning they display more behaviors more evenly than WR.
+
+### Gatewait
+
+```{r}
+gatewait <- glm.nb(gatewait_NO ~ species, 
+                   offset(log_duration), 
+                   data = novelobj)
+```
+
+```{r}
+summary(gatewait)
+anova(gatewait)
+```
+
+Gate wait isn't significantly different between species.
+
+```{r}
+simulationOutput_gatewait <- simulateResiduals(gatewait)
+plotQQunif(simulationOutput_gatewait) 
+plotResiduals(simulationOutput_gatewait)
+```
+
+Negative binomial is good model, which shows there is not significant difference in time gate waiting between species.
+
+### Stimulated
+
+```{r}
+stimulated <- glm.nb(stimulated_NO ~ species, 
+                     offset(log_duration), 
+                     data = novelobj)
+```
+
+```{r}
+summary(stimulated)
+anova(stimulated)
+```
+
+Stimulated isn't significantly different between species.
+
+```{r}
+simulationOutput_stimulated <- simulateResiduals(stimulated)
+plotQQunif(simulationOutput_stimulated) 
+plotResiduals(simulationOutput_stimulated)
+```
+
+Negative binomial is good model, which shows there is not significant difference in time stimulated between species.
+
+### Unstimulated
+
+```{r}
+novelobj %>% ggplot(aes(unstimulated_NO)) + geom_histogram()
+```
+
+```{r}
+unstimulated <- glmmTMB(unstimulated_NO ~ species +
+                        offset(log_duration), 
+                        data = novelobj,
+                        family=nbinom1)
+```
+
+```{r}
+summary(unstimulated)
+```
+
+```{r}
+simulationOutput_unstimulated <- simulateResiduals(unstimulated)
+plotQQunif(simulationOutput_unstimulated) 
+plotResiduals(simulationOutput_unstimulated)
+```
+
+No model is good, likely due to the distribution shape of the data.
+
+### Active
+
+```{r}
+active <- glm.nb(active_NO ~ species, 
+                 offset(log_duration), 
+                 data = novelobj)
+
+summary(active)
+anova(active)
+```
+
+Active isn't significantly different between species.
+
+```{r}
+simulationOutput_active <- simulateResiduals(active)
+plotQQunif(simulationOutput_active) 
+plotResiduals(simulationOutput_active)
+```
+
+Neg binomial model passed diagnostics. There's no significant difference between species.
+
+### Inactive
+
+```{r}
+inactive <- glm.nb(inactive_NO ~ species, 
+                   offset(log_duration), 
+                   data = novelobj)
+
+summary(inactive)
+anova(inactive)
+```
+
+Inactive isn't significantly different between species.
+
+```{r}
+simulationOutput_inactive <- simulateResiduals(inactive)
+plotQQunif(simulationOutput_inactive) 
+plotResiduals(simulationOutput_inactive)
+```
+
+Neg binomial model is better but KS is significant.
+
+### Pace\*
+
+```{r}
+pace <- glmmTMB(pace_NO ~ species +
+               offset(log_duration), 
+               data = novelobj,
+               family = nbinom1)
+
+```
+
+```{r}
+summary(pace)
+```
+
+```{r}
+simulationOutput_pace <- simulateResiduals(pace)
+plotQQunif(simulationOutput_pace) 
+plotResiduals(simulationOutput_pace)
+```
+
+Pacing is significantly different between species \* BR \> WR
+
+### Retreat\*
+
+```{r}
+retreat <- glmmTMB(retreat_NO ~ species +
+                  offset(log_duration), 
+                  data = novelobj,
+                  family = nbinom2)
+```
+
+```{r}
+summary(retreat)
+```
+
+```{r}
+simulationOutput_retreat <- simulateResiduals(retreat)
+plotQQunif(simulationOutput_retreat) 
+plotResiduals(simulationOutput_retreat)
+```
+
+Retreating is significantly different between species \* BR \> WR
+
+### Snort\*
+
+```{r}
+snort <- glm.nb(snort_NO~ species + 
+                offset(log_duration), 
+                data = novelobj)
+```
+
+```{r}
+summary(snort)
+anova(snort)
+```
+
+```{r}
+simulationOutput_snort <- simulateResiduals(snort)
+plotQQunif(simulationOutput_snort) 
+plotResiduals(simulationOutput_snort)
+```
+
+Snort is significantly different between species \* BR \> WR
+
+### Whine
+
+```{r}
+whine <- glmmTMB(whine_NO ~ species +
+                  offset(log_duration), 
+             data = novelobj, 
+             family = nbinom1)
+```
+
+```{r}
+summary(whine)
+```
+
+Whine isn't significantly different between species.
+
+```{r}
+simulationOutput_whine <- simulateResiduals(whine)
+plotQQunif(simulationOutput_whine) 
+plotResiduals(simulationOutput_whine)
+```
+
+### Pant\*
+
+```{r}
+pant <- glm.nb(pant_NO ~ species + 
+               offset(log_duration), 
+               data = novelobj)
+```
+
+```{r}
+summary(pant)
+anova(pant)
+```
+
+```{r}
+simulationOutput_pant <- simulateResiduals(pant)
+plotQQunif(simulationOutput_pant) 
+plotResiduals(simulationOutput_pant)
+```
+
+Pant is significantly different between species. \* WR \> BR
+
+### Attack
+
+```{r}
+attack <- glm.nb(attack_NO ~ species +
+                 offset(log_duration),
+                 data = novelobj)
+```
+
+```{r}
+summary(attack)
+anova(attack)
+```
+
+Attack isn't significantly different between species.
+
+```{r}
+simulationOutput_attack <- simulateResiduals(attack)
+plotQQunif(simulationOutput_attack) 
+plotResiduals(simulationOutput_attack)
+```
+
+### Charge\*
+
+```{r}
+charge <- glm.nb(charge_NO ~ species + 
+                 offset(log_duration), 
+                 data = novelobj)
+```
+
+```{r}
+summary(charge)
+anova(charge)
+```
+
+```{r}
+simulationOutput_charge <- simulateResiduals(charge)
+plotQQunif(simulationOutput_charge) 
+plotResiduals(simulationOutput_charge)
+```
+
+Charge is significantly different between species. \* BR \> WR
+
+### Olfactory object\*
+
+```{r}
+olfobj <- glm.nb(olfact_obj_NO ~species + 
+                 offset(log_duration), 
+                 data = novelobj)
+```
+
+```{r}
+summary(olfobj)
+anova(olfobj)
+```
+
+```{r}
+simulationOutput_olfobj <- simulateResiduals(olfobj)
+plotQQunif(simulationOutput_olfobj) 
+plotResiduals(simulationOutput_olfobj)
+```
+
+Olfactory w/object is significantly different between species.\* BR \> WR
+
+### Olfactory other
+
+```{r}
+olfoth <- glmmTMB(olfact_other_NO ~ species + 
+                    offset(log_duration), 
+                  data = novelobj,
+                  family = nbinom2)
+```
+
+```{r}
+summary(olfoth)
+```
+
+```{r}
+simulationOutput_olfoth <- simulateResiduals(olfoth)
+plotQQunif(simulationOutput_olfoth) 
+plotResiduals(simulationOutput_olfoth)
+```
+
+There's no significant difference between species for olfactory behavior with other than the basket
+
+### Contact interaction\*
+
+```{r}
+cinx <- glmmTMB(contact_inx_NO ~ species +
+               offset(log_duration), 
+               data = novelobj,
+               family = nbinom1)
+```
+
+```{r}
+summary(cinx)
+```
+
+```{r}
+simulationOutput_cinx <- simulateResiduals(cinx)
+plotQQunif(simulationOutput_cinx) 
+plotResiduals(simulationOutput_cinx)
+```
+
+Contact interaction is significantly different between species, with WR touching the basket less frequently than BR.\* BR \> WR
+
+### Advance directed\*
+
+```{r}
+advd <- glm(advance_direct_NO ~ species + 
+            offset(log_duration), 
+            data = novelobj)
+
+summary(advd)
+anova(advd)
+```
+
+```{r}
+simulationOutput_advd <- simulateResiduals(advd)
+plotQQunif(simulationOutput_advd) 
+plotResiduals(simulationOutput_advd)
+```
+
+Advance directed is significantly different between species. \* BR \> WR
+
+### Head fling
+
+```{r}
+hfling <- glmmTMB(head_fling_NO ~ species +
+                offset(log_duration), 
+              data = novelobj, 
+              family = nbinom2)
+```
+
+```{r}
+summary(hfling)
+```
+
+Head fling isn't significantly different between species.
+
+```{r}
+simulationOutput_hfling <- simulateResiduals(hfling)
+plotQQunif(simulationOutput_hfling) 
+plotResiduals(simulationOutput_hfling)
+```
+
+Combined adjusted quantile test is significant but lines are still parallel - accepting model (AIC = 36.2)
+
+### Near\*
+
+```{r}
+near <- glm(near_NO ~ species + 
+            offset(log_distance),
+            data = novelobj)
+```
+
+```{r}
+summary(near)
+```
+
+```{r}
+simulationOutput_near <- simulateResiduals(near)
+plotQQunif(simulationOutput_near) 
+plotResiduals(simulationOutput_near)
+```
+
+Near is significantly different between species. \* BR \> WR
+
+# BLACK RHINO DEMO-ENVIRON
+
+PCs from PCA are not modeled because they cluster similar behaviors \## 1. Retreat
+
+```{r}
+b.novelobj %>% ggplot(aes(freq.retreat)) + geom_histogram() + theme_ggeffects()
+```
+
+Poisson distribution
+
+Data visualization:
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.retreat, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.retreat, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(size, freq.retreat, color = housing)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(size, freq.retreat, color = access)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.retreat, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) 
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.retreat, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.retreat, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.retreat, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.retreat, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.retreat, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+B_no1.1a <- glmmTMB(retreat_NO ~ age + sex + housing + 
+                     access + size + temperature +(1|inst_id) + 
+                     offset(log_duration), 
+                     data = b.novelobj,
+                        family=nbinom2)
+```
+
+```{r}
+B_no1.1 <- glmmTMB(retreat_NO ~ age + sex + housing + 
+                     access + size + temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj,
+                        family=nbinom2)
+```
+
+```{r}
+AIC(B_no1.1a, B_no1.1)
+```
+
+```{r}
+anova(B_no1.1a, B_no1.1)
+```
+
+```{r}
+summary(B_no1.1a) #exclude institution effect
+```
+
+```{r}
+drop1(B_no1.1)
+```
+
+Institution ID should not be included.
+
+```{r}
+drop1(B_no1.1a)
+```
+
+```{r}
+B_no1.2 <- glmmTMB(retreat_NO ~ age + sex + 
+                     access + size + temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj,
+                        family=nbinom2)
+```
+
+```{r}
+drop1(B_no1.2)
+```
+
+```{r}
+B_no1.3 <- glmmTMB(retreat_NO ~ age + sex + 
+                     access + size + 
+                     offset(log_duration), 
+                     data = b.novelobj,
+                        family=nbinom2)
+```
+
+```{r}
+drop1(B_no1.3)
+```
+
+```{r}
+B_no1.4 <- glmmTMB(retreat_NO ~ age + sex + 
+                     size + 
+                     offset(log_duration), 
+                     data = b.novelobj,
+                        family=nbinom2)
+```
+
+```{r}
+drop1(B_no1.4)
+```
+
+```{r}
+B_no1.5 <- glmmTMB(retreat_NO ~ sex + 
+                     size + 
+                     offset(log_duration), 
+                     data = b.novelobj,
+                        family=nbinom2)
+```
+
+```{r}
+drop1(B_no1.5)
+```
+
+```{r}
+B_no1.6 <- glmmTMB(retreat_NO ~ size +
+                    offset(log_duration), 
+                    data = b.novelobj,
+                        family=nbinom2)
+```
+
+```{r}
+B_no1.7 <- glmmTMB(retreat_NO ~ 1 +
+                    offset(log_duration), 
+                    data = b.novelobj,
+                        family=nbinom2)
+```
+
+```{r}
+AIC(B_no1.1, B_no1.2, B_no1.3, B_no1.4, B_no1.5, B_no1.6, B_no1.7)
+```
+
+### Diagnostic plots:
+
+```{r}
+par(mfrow = c(1, 1))
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no1.6)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Looks good.
+
+```{r}
+Anova(B_no1.6)
+```
+
+```{r}
+summary(B_no1.6)
+```
+
+```{r}
+b.novelobj %>% count(size)
+```
+
+The reason why S size (n=7) is not significant could be due to the smaller sample size compared to L size (n=10) and M size (n=15). However, it still shows a 'trend'.
+
+```{r}
+summary(B_no1.7)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no1.7)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Passed all diagnostic tests.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no1.5)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Did not pass combined adjusted quantile test
+
+```{r}
+Anova(B_no1.5)
+```
+
+```{r}
+summary(B_no1.5)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no1.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+Did not pass diagnostic test.
+
+```{r}
+summary(B_no1.4)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no1.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+Passed diagnostics
+
+### Graph:
+
+So that graph shows enclosure size in order from S to M to L (left to right):
+
+```{r}
+b.novelobj$size <- factor(b.novelobj$size, levels = c("S", "M", "L"))
+```
+
+Create dataframe called 'EM' for model B_no1.6 using predictions.
+
+```{r}
+EM <- ggpredict(B_no1.6, terms = "size", 
+                type = "fixed") # to ensure it uses the values after transforming them back by taking the exponentiation because the negative binomial model uses the log().
+```
+
+```{r}
+ggplot(EM,aes(x, predicted)) + geom_boxplot() +
+  geom_errorbar(aes(ymin = predicted - std.error, ymax = predicted + std.error), width = 0.2) + 
+  labs(title = "Predicted: Retreat", x = "Size", y = "Mean Count of Retreat") +
+  theme_minimal()
+```
+
+After going over these models, B_no1.7 is the best model. \~ 1. No graph.
+
+## 2. Pant calls
+
+Data visualization:
+
+```{r}
+b.novelobj %>% ggplot(aes(freq.pant)) + geom_histogram() + theme_ggeffects()
+b.novelobj %>% ggplot(aes(freq.pant)) + geom_histogram() + theme_ggeffects() + xlim(0.02,0.3) # only observed 3 times
+```
+
+Not included because it rarely occurred.
+
+## 3. Olfactory with object
+
+```{r}
+b.novelobj %>% ggplot(aes(freq.olfact_obj)) + geom_histogram() + theme_ggeffects()
+```
+
+Right skewed.
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.olfact_obj, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.olfact_obj, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.olfact_obj, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.olfact_obj, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(size, freq.olfact_obj, color = access)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+We see different trends for access and size. Thus, we need to include the interaction of them in the models.
+
+### Modelling:
+
+```{r}
+B_no3.1a <- glmmTMB(olfact_obj_NO ~ age + sex + housing +
+                     access * size + temperature + (1|inst_id) + 
+                     offset(log_duration), 
+                     data = b.novelobj,
+                    family = nbinom2)
+
+B_no3.1 <- glmmTMB(olfact_obj_NO ~ age + sex + housing +
+                  access * size + temperature + 
+                  offset(log_duration), 
+                  data = b.novelobj,
+                    family = nbinom2)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(B_no3.1a)
+anova(B_no3.1a,B_no3.1)
+```
+
+Do not include random effect
+
+```{r}
+B_no3.1b <- glm.nb(olfact_obj_NO ~ age + sex + housing +
+                  access * size + temperature *access + 
+                  offset(log_duration), 
+                  data = b.novelobj)
+```
+
+```{r}
+summary(B_no3.1b)
+```
+
+```{r}
+AIC(B_no3.1b,B_no3.1)
+```
+
+Include temperature & access interaction
+
+```{r}
+drop1(B_no3.1b)
+```
+
+```{r}
+B_no3.2 <- glm.nb(olfact_obj_NO ~ age + housing +
+                  access * size + temperature * access+ 
+                  offset(log_duration), 
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no3.2)
+```
+
+```{r}
+B_no3.3 <- glm.nb(olfact_obj_NO ~ age +
+                  access * size + temperature *access+ 
+                  offset(log_duration), 
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no3.3)
+```
+
+```{r}
+B_no3.4 <- glm.nb(olfact_obj_NO ~ age +
+                  access *size + 
+                  offset(log_duration), 
+                  data = b.novelobj)
+```
+
+```{r}
+summary(B_no3.4)
+```
+
+```{r}
+drop1(B_no3.4)
+```
+
+```{r}
+B_no3.5 <- glm.nb(olfact_obj_NO ~ access * size +
+                    offset(log_duration), 
+                    data = b.novelobj)
+```
+
+```{r}
+B_no3.6 <- glm.nb(olfact_obj_NO ~ access +
+                    offset(log_duration), 
+                    data = b.novelobj)
+```
+
+```{r}
+B_no3.7 <- glm.nb(olfact_obj_NO ~ size +
+                    offset(log_duration), 
+                    data = b.novelobj)
+```
+
+```{r}
+B_no3.8 <- glm.nb(olfact_obj_NO ~ 1 +
+                    offset(log_duration), 
+                    data = b.novelobj)
+```
+
+### Diagnostic plots:
+
+```{r}
+AIC(B_no3.1, B_no3.1b, B_no3.2, B_no3.3, B_no3.4, B_no3.5, B_no3.6, B_no3.7, B_no3.8)
+```
+
+```{r}
+summary(B_no3.4)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no3.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+Passed diagnostics.
+
+```{r}
+Anova(B_no3.4)
+```
+
+```{r}
+summary(B_no3.3)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no3.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+Did not pass diagnostics.
+
+```{r}
+Anova(B_no3.3)
+```
+
+```{r}
+summary(B_no3.2)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no3.2)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostics.
+
+```{r}
+Anova(B_no3.2)
+```
+
+```{r}
+summary(B_no3.1b)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no3.1b)
+plotQQunif(simulationOutput)
+plotResiduals(simulationOutput) 
+```
+
+Did not pass combined adjusted quantile test.
+
+```{r}
+Anova(B_no3.1b)
+```
+
+```{r}
+B_no3.4 <- glm.nb(olfact_obj_NO ~ age +
+                   access * size + 
+                   offset(log_duration), 
+                  data = b.novelobj)
+```
+
+```{r}
+summary(B_no3.4)
+```
+
+Graph models:
+
+```{r}
+predictions_B_no3.4 <- ggpredict(B_no3.4
+                                 , terms = c("age","access", "size"), type = "count")
+```
+
+### Graph
+
+```{r}
+ggplot(predictions_B_no3.4, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_line(size = 1) +
+  facet_wrap(~facet) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
+  scale_color_manual(values = c("salmon4", "lightseagreen")) +
+  scale_fill_manual(values = c("salmon4","lightseagreen")) +
+  theme_ggeffects() +
+    labs(color = "Access",
+         fill = "Access",
+         x = "Age",
+        y = "Mean Count of Olfactory with Object") +
+     theme(text = element_text(size = 18)) +
+  theme(axis.text = element_text(size = 14))
+#,title = "Black rhino")
+```
+
+Save plot:
+
+```{r}
+BR_OlfObj <- ggplot(predictions_B_no3.4, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_line(size = 1) +
+  facet_wrap(~facet) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
+  scale_color_manual(values = c("salmon4", "lightseagreen")) +
+  scale_fill_manual(values = c("salmon4","lightseagreen")) +
+  theme_ggeffects() +
+    labs(color = "Access",
+         fill = "Access",
+         x = "Age (years)",
+        y = "Mean Count of Olfactory with Object") +
+  theme(text = element_text(family = "serif"))+
+  theme(text = element_text(size = 16))
+```
+
+## 4. Olfactory with other
+
+```{r}
+b.novelobj %>% ggplot(aes(freq.olfact_other)) + geom_histogram() + theme_ggeffects()
+```
+
+It does not show a normal distribution. Right skewed.
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.olfact_other, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+Female seems to go up as age increases but not the case for males.
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.olfact_other, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.olfact_other, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.olfact_other, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) 
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.olfact_other, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(size, freq.olfact_other, color = access)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(size, freq.olfact_other, color = sex)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.olfact_other, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+Interaction between age and sex, and temp and access
+
+### Modelling:
+
+```{r}
+B_no4.1a <- glmer.nb(olfact_other_NO ~ age * sex + housing +
+                     access + size + temperature + (1|inst_id) + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+
+B_no4.1 <- glm.nb(olfact_other_NO ~ age * sex + housing +
+                     access + size + temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+Determine if random effect should be included.
+
+```{r}
+Anova(B_no4.1)
+summary(B_no4.1a)
+anova(B_no4.1a,B_no4.1)
+```
+
+There's no difference between the 2 models so exclude random effect.
+
+Determine if interaction is significant
+
+```{r}
+B_no4.1b <- glm.nb(olfact_other_NO ~ age * sex + housing +
+                     access + size + temperature *access+ 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+AIC(B_no4.1b,B_no4.1)
+```
+
+Don't include interaction
+
+```{r}
+drop1(B_no4.1)
+```
+
+```{r}
+B_no4.2 <- glm.nb(olfact_other_NO ~ age * sex + housing +
+                     access + size + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no4.2)
+```
+
+```{r}
+B_no4.3 <- glm.nb(olfact_other_NO ~ age * sex +
+                     access + size + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no4.3)
+```
+
+```{r}
+B_no4.4 <- glm.nb(olfact_other_NO ~ access + size + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no4.4)
+```
+
+```{r}
+b.novelobj$size <- relevel(b.novelobj$size, ref = "S")
+```
+
+```{r}
+B_no4.5 <- glm.nb(olfact_other_NO ~ size + 
+                    offset(log_duration), 
+                    data = b.novelobj)
+```
+
+```{r}
+B_no4.6 <- glm.nb(olfact_other_NO ~ 1 + 
+                    offset(log_duration), 
+                    data = b.novelobj)
+```
+
+```{r}
+AIC(B_no4.1, B_no4.2, B_no4.3, B_no4.4, B_no4.5, B_no4.6) 
+```
+
+### Diagnostic plots:
+
+```{r}
+simulationOutput <- simulateResiduals(B_no4.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+summary(B_no4.4)
+```
+
+Outdoor access and large enclosure size show trend but no significance.
+
+```{r}
+Anova(B_no4.4)
+```
+
+Anova shows that enclosure size has a significant effect on olfactory with other.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no4.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed.
+
+```{r}
+summary(B_no4.3)
+```
+
+```{r}
+Anova(B_no4.3)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no4.2)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput) takes too long to render, failed test
+```
+
+Failed residuals test.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no4.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed.
+
+```{r}
+summary(B_no4.5)
+```
+
+Model with only size is not significant.
+
+```{r}
+Anova(B_no4.5)
+```
+
+```{r}
+
+```
+
+Anova shows size shows a trend but again, no significance.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no4.1)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput) takes too long to load, failed test
+```
+
+Full model failed diagnostic tests.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no4.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Failed combined adjusted quantile test.
+
+Graph best model:
+
+```{r}
+GGP <- ggpredict(B_no4.5, terms = c("size"), type = "fixed")
+
+plot(ggpredict(B_no4.5, terms = c("size"), type = "fixed")) +
+  labs(x = "Enclosure size", 
+       y = "Mean Count of Olfactory with Other",
+       title = "Predicted: Olfactory with Other")
+```
+
+Compare to raw data points:
+
+```{r}
+b.novelobj %>% ggplot(aes(size, olfact_other_NO)) + geom_boxplot()
+```
+
+Graph models:
+
+```{r}
+predictions <- ggpredict(B_no4.5, terms = c("size"), type = "fixed")
+```
+
+```{r}
+summary(B_no4.5)
+```
+
+### Graph
+
+```{r}
+ggplot(predictions, aes(x = x, y = predicted)) +
+  geom_boxplot(size = 1, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1)  +
+  theme_ggeffects() +
+    labs(x = "Enclosure Size", 
+       y = "Mean Count of Olfactory with Other") + 
+  theme(text = element_text(family = "serif")) +
+  showSignificance( c(2,3), 6.3, -0.05, "*") +
+  showSignificance( c(1,3), 7, -0.05, "NS") +
+  showSignificance( c(1,2), 4.5, -0.05, "NS") +
+  ylim(0,7.5)
+```
+
+```{r}
+BR_OlfOther <- ggplot(predictions, aes(x = x, y = predicted)) +
+  geom_boxplot(size = 1, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1)  +
+  theme_ggeffects() +
+    labs(x = "Enclosure Size", 
+       y = "Mean Count of Olfactory with Other") +
+  theme(text = element_text(family = "serif"))+
+  showSignificance( c(2,3), 6.3, -0.05, "*") +
+  showSignificance( c(1,3), 7, -0.05, "NS") +
+  showSignificance( c(1,2), 4.5, -0.05, "NS") +
+  ylim(0,7.5)+
+ theme(text = element_text(size = 15))
+```
+
+## 5. Marking
+
+```{r}
+b.novelobj %>% ggplot(aes(freq.marking)) + geom_histogram()+ theme_ggeffects()
+```
+
+Mostly all zeroes.
+
+It does not show a normal distribution
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.marking, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.marking, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.marking, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(access, freq.marking, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.marking, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.marking, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+B_no5.1a <- glmer.nb(freq.marking ~ age + sex + housing +
+                     access + size + temperature + (1|inst_id) + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+
+B_no5.1 <- glm.nb(freq.marking ~ age + sex + housing +
+                     access + size + temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+anova(B_no5.1a, B_no5.1)
+```
+
+Do not include
+
+Determine if temp\* access interaction needs to be included
+
+```{r}
+B_no5.1b <- glm.nb(freq.marking ~ age + sex + housing +
+                     access + size + temperature *access + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+AIC(B_no5.1b,B_no5.1)
+```
+
+Don't include it
+
+```{r}
+drop1(B_no5.1)
+```
+
+```{r}
+B_no5.2 <- glm.nb(freq.marking ~ age + sex + housing +
+                     access  + temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no5.2)
+```
+
+```{r}
+B_no5.3 <- glm.nb(freq.marking ~ age + sex + housing +
+                     temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no5.3)
+```
+
+```{r}
+B_no5.4 <- glm.nb(freq.marking ~ age + sex + housing+
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no5.4)
+```
+
+```{r}
+B_no5.5 <- glm.nb(freq.marking ~ sex + housing+
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no5.5)
+```
+
+```{r}
+B_no5.6 <- glm.nb(freq.marking ~ sex +
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+B_no5.7 <- glm.nb(freq.marking ~ 1 +
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+### Diagnostic plots:
+
+Check AIC:
+
+```{r}
+AIC(B_no5.7, B_no5.6, B_no5.5, B_no5.4, B_no5.3, B_no5.2, B_no5.1)
+```
+
+```{r}
+summary(B_no5.7)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no5.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+summary(B_no5.6)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no5.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+summary(B_no5.5)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no5.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(B_no5.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(B_no5.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(B_no5.2)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(B_no5.1)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput)
+```
+
+Not good
+
+## 6. Advanced directed
+
+Data visualization:
+
+```{r}
+b.novelobj %>% ggplot(aes(freq.advance_direct)) + geom_histogram()+ theme_ggeffects() + theme_ggeffects()
+```
+
+It does not show a normal distribution
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.advance_direct, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.advance_direct, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.advance_direct, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(access, freq.advance_direct, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.advance_direct, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.advance_direct, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+B_no6.1a <- glmer.nb(advance_direct_NO ~ age + sex + housing +
+                     access + size + temperature + (1|inst_id) + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+
+B_no6.1 <- glm.nb(advance_direct_NO ~ age + sex + housing +
+                     access + size + temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(B_no6.1a)
+anova(B_no6.1a,B_no6.1)
+```
+
+```{r}
+drop1(B_no6.1)
+```
+
+```{r}
+B_no6.2 <- glm.nb(advance_direct_NO ~ age + sex + housing +
+                     access + temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no6.2)
+```
+
+```{r}
+B_no6.3 <- glm.nb(advance_direct_NO ~ age + housing +
+                     access + temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no6.3)
+```
+
+```{r}
+B_no6.4 <- glm.nb(advance_direct_NO ~ age + housing + temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no6.4)
+```
+
+```{r}
+B_no6.5 <- glm.nb(advance_direct_NO ~ age + housing + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no6.5)
+```
+
+```{r}
+B_no6.6 <- glm.nb(advance_direct_NO ~ age + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+B_no6.7 <- glm.nb(advance_direct_NO ~ 1 + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+AIC(B_no6.1, B_no6.2, B_no6.3, B_no6.4, B_no6.5, B_no6.6, B_no6.7)
+```
+
+Model with age is the best model.
+
+### Diagnostic plots:
+
+```{r}
+simulationOutput <- simulateResiduals(B_no6.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no6.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Failed residual test.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no6.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+summary(B_no6.5)
+```
+
+Neither age nor housing style have a significant effect on freq. of advance directed.
+
+```{r}
+Anova(B_no6.5)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no6.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed.
+
+```{r}
+Anova(B_no6.1)
+```
+
+### Graph:
+
+```{r}
+plot(ggeffects::ggeffect(B_no6.5, terms = c("age","housing"))) 
+```
+
+Raw data points are all over, outside of the standard error area. After update, `add.data` isn't working.
+
+Best model is \~ 1. No graph.
+
+## 7. Contact interaction
+
+```{r}
+b.novelobj %>% ggplot(aes(freq.contact_inx)) + geom_histogram()+ theme_ggeffects() 
+```
+
+It does not show a normal distribution.
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.contact_inx, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.contact_inx, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.contact_inx, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(access, freq.contact_inx, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, freq.contact_inx, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.contact_inx, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, freq.contact_inx, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+Can't see any trends from any of these graphs.
+
+### Modelling:
+
+```{r}
+B_no7.1a <- glmer.nb(contact_inx_NO ~ age + sex + housing +
+                     size + temperature + (1|inst_id) + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+
+B_no7.1 <- glm.nb(contact_inx_NO ~ age + sex + housing +
+                     size + temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+Determine if RE should be included.
+
+```{r}
+summary(B_no7.1a)
+```
+
+```{r}
+anova(B_no7.1a,B_no7.1)
+```
+
+Do not include institution as random effect.
+
+```{r}
+drop1(B_no7.1)
+```
+
+```{r}
+B_no7.2 <- glm.nb(contact_inx_NO ~ age + sex + housing +
+                     temperature +
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no7.2)
+```
+
+```{r}
+B_no7.3 <- glm.nb(contact_inx_NO ~ sex + housing + temperature +
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no7.3)
+```
+
+```{r}
+B_no7.4 <- glm.nb(contact_inx_NO ~ housing + temperature +
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no7.4)
+```
+
+```{r}
+B_no7.5 <- glm.nb(contact_inx_NO ~ temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+B_no7.6 <- glm.nb(contact_inx_NO ~ 1 + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+AIC(B_no7.1, B_no7.2, B_no7.3, B_no7.4, B_no7.5,B_no7.6) %>% arrange(AIC)
+```
+
+### Diagnostic plots:
+
+```{r}
+simulationOutput <- simulateResiduals(B_no7.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+This is the simplest model and passed all diagnostic tests. Chosen model.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no7.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostic tests.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no7.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostic tests.
+
+```{r}
+Anova(B_no7.4)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no7.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostic tests.
+
+## 8. Near to object
+
+Data visualization:
+
+```{r}
+b.novelobj %>% ggplot(aes(prop.near)) + geom_histogram()+ theme_ggeffects() 
+```
+
+It shows a somewhat normal distribution
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, prop.near, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, prop.near, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, prop.near, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, prop.near, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(access, prop.near, color = temperature)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(access, prop.near, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+Can't see any interactions from any of these graphs. Access seems to have an effect on prop.near.
+
+### Modelling:
+
+```{r}
+B_no8.1a <- glmer.nb(near_NO ~ age + sex + housing +
+                     access + temperature + size + (1|inst_id) +
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+B_no8.1<- glm.nb(near_NO ~ age + sex + housing +
+                     access + temperature + size +
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+A linear model works best for my data
+
+Determine if random effect should be included.
+
+```{r}
+summary(B_no8.1a)
+anova(B_no8.1a,B_no8.1)
+```
+
+Do not include random effect.
+
+```{r}
+B_no8.1b<- glm.nb(near_NO ~ age + sex + housing +
+                     access + temperature *access + size +
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+AIC(B_no8.1b,B_no8.1)
+```
+
+```{r}
+drop1(B_no8.1b)
+```
+
+```{r}
+B_no8.2 <- glm(near_NO ~ age + housing +
+                     access + temperature + size +
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no8.2)
+```
+
+```{r}
+B_no8.3 <- glm(near_NO ~ age + housing +
+                    temperature + size +
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no8.3)
+```
+
+```{r}
+B_no8.4 <- glm(near_NO ~ age + housing + temperature +
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+drop1(B_no8.4)
+```
+
+```{r}
+B_no8.5 <- glm(near_NO ~ housing + temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+Anova(B_no8.5)
+```
+
+```{r}
+drop1(B_no8.5)
+```
+
+```{r}
+B_no8.6 <- glm(near_NO ~ temperature + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+B_no8.7 <- glm(near_NO ~ 1 + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+B_no8.8 <- glm(near_NO ~  access + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+Anova(B_no8.8)
+```
+
+```{r}
+AIC(B_no8.5, B_no8.8)
+```
+
+```{r}
+AIC(B_no8.1, B_no8.2, B_no8.3, B_no8.4, B_no8.5, B_no8.6, B_no8.7, B_no8.1b)
+```
+
+B_no8.5 best fit (housing + temperature) according to AIC.
+
+### Diagnostic plots:
+
+```{r}
+summary(B_no8.1)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no8.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Full model looks good.
+
+```{r}
+summary(B_no8.5)
+```
+
+```{r}
+Anova(B_no8.1)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no8.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+Anova(B_no8.5)
+```
+
+Housing + temperature model looks good. Passed diagnostics.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no8.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no8.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+Anova(B_no8.4)
+```
+
+Temperature model did not pass all diagnostics.
+
+```{r}
+B_nearmod <- B_no8.5
+```
+
+### Graph
+
+Graph best model:
+
+```{r}
+plot(ggpredict(B_no8.5, terms = c("housing","temperature"), type = "fixed"))
+```
+
+```{r}
+predictions_B_no8.5 <- ggpredict(B_no8.5, terms = c("temperature","housing"), type = "fixed")
+```
+
+```{r}
+ggplot(predictions_B_no8.5, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_line(size = 1) +
+geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.1) + 
+  scale_color_manual(values = c("green4", "darkviolet")) +
+  scale_fill_manual(values = c("green4", "darkviolet")) +
+  theme_ggeffects() +
+    labs(   x = "Temperature (°F)",
+       y = "Mean Intervals of Near",
+       color = "Sociality",
+       fill = "Sociality")+
+     theme(text = element_text(size = 18)) +
+  theme(axis.text = element_text(size = 14))
+```
+
+Save plot:
+
+```{r}
+BNear <- ggplot(predictions_B_no8.5, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_line(size = 1) +
+geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.1) + 
+  scale_color_manual(values = c("green4", "darkviolet")) +
+  scale_fill_manual(values = c("green4", "darkviolet")) +
+  theme_ggeffects() +
+    labs(   x = "Temperature (°C)",
+       y = "Mean Count of Near",
+       color = "Sociality",
+       fill = "Sociality")+
+  theme(text = element_text(family = "serif"))+
+  theme(text = element_text(size = 16))
+```
+
+### Further analysis:
+
+```{r}
+B_no8.5b <- glm(near_NO ~ housing + temperature*access + 
+                     offset(log_duration), 
+                     data = b.novelobj)
+```
+
+```{r}
+AIC(B_no8.5, B_no8.5b)
+```
+
+Model without the interaction is still better model.
+
+```{r}
+summary(B_no8.5b)
+```
+
+When including interaction, there isn't a trend anymore.
+
+```{r}
+summary(B_no8.5)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no8.5b)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Model passed diagnostics.
+
+```{r}
+anova(B_no8.5b)
+```
+
+```{r}
+predictions_B_no8.5b <- ggpredict(B_no8.5b, terms = c("temperature","access","housing"), type = "fixed")
+```
+
+```{r}
+ggplot(predictions_B_no8.5b, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_line(size = 1) +
+  facet_wrap(~facet) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
+  scale_color_manual(values = c("salmon4", "lightseagreen")) +
+  scale_fill_manual(values = c("salmon4","lightseagreen")) +
+  theme_ggeffects() +
+    labs(color = "Access",
+         fill = "Access",
+         x = "Temperature",
+        y = "Mean Intervals of Near") 
+#,title = "Black rhino")
+```
+
+```{r}
+ggplot(predictions_B_no8.5b, aes(x = x, y = predicted, color = facet, fill = facet)) +
+  geom_line(size = 1) +
+  facet_wrap(~group) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
+  scale_color_manual(values = c("salmon4", "lightseagreen")) +
+  scale_fill_manual(values = c("salmon4","lightseagreen")) +
+  theme_ggeffects() +
+    labs(color = "Access",
+         fill = "Access",
+         x = "Temperature",
+        y = "Mean Intervals of Near") 
+```
+
+## 9. Gate wait
+
+```{r}
+b.novelobj %>% ggplot(aes(prop.gatewait)) + geom_histogram()+ theme_ggeffects() 
+```
+
+most rhinos (25/31) did not wait by the gate at all. Thus, this behavior was excluded.
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, prop.gatewait, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, prop.gatewait, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(access, prop.gatewait, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+B_no9.1 <- glmer.nb(pace_NO ~  age + sex + housing +
+                  access + size  + temperature + 
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+
+B_no9.1a <- glm.nb(pace_NO ~  age + sex + housing +
+                  access * size  + temperature + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+
+```
+
+## 10. Stimulated
+
+```{r}
+b.novelobj %>% ggplot(aes(prop.stimulated)) + geom_histogram()+ theme_ggeffects() 
+```
+
+Not normally distributed.
+
+```{r}
+b.novelobj %>% ggplot(aes(temperature, prop.stimulated, color=access)) + geom_point()
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, prop.stimulated, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, prop.stimulated, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(access, prop.stimulated, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, prop.stimulated, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+Within outdoor, seems like L and M have different effects so include interaction.
+
+### Modelling:
+
+```{r}
+B_no10.1a <- glmer.nb(stimulated_NO ~  age + sex + housing +
+                  access * size  + temperature + 
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+
+B_no10.1 <- glm.nb(stimulated_NO ~  age + sex + housing +
+                  access * size  + temperature + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(B_no10.1a)
+anova(B_no10.1a, B_no10.1)
+```
+
+Institution ID doesn't variance in negative binomial models.
+
+```{r}
+B_no10.1b <- glm.nb(stimulated_NO ~  age + sex + housing +
+                  access * size  + temperature *access + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+AIC(B_no10.1b,B_no10.1)
+```
+
+```{r}
+drop1(B_no10.1)
+```
+
+```{r}
+B_no10.2 <- glm.nb(stimulated_NO ~  age + sex + housing +
+                  temperature + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no10.2)
+```
+
+```{r}
+B_no10.3 <- glm.nb(stimulated_NO ~  age + housing + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no10.3)
+```
+
+```{r}
+B_no10.4 <- glm.nb(stimulated_NO ~  age + housing +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no10.4)
+```
+
+```{r}
+B_no10.5 <- glm.nb(stimulated_NO ~  age + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no10.6 <- glm.nb(stimulated_NO ~  1 + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no10.7 <- glm.nb(stimulated_NO ~  size*access + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no10.8 <- glm.nb(stimulated_NO ~  temperature + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no10.9 <- glm.nb(stimulated_NO ~  temperature +age + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no10.10 <- glm.nb(stimulated_NO ~  access + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no10.11 <- glm.nb(stimulated_NO ~  size + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+AIC(B_no10.1, B_no10.2, B_no10.3, B_no10.4, B_no10.5, B_no10.6, B_no10.7, B_no10.8, B_no10.9, B_no10.10, B_no10.11)
+```
+
+### Diagnostic plots:
+
+```{r}
+summary(B_no10.1)
+summary(B_no10.4)
+summary(B_no10.3)
+summary(B_no10.10)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass all tests.
+
+```{r}
+Anova(B_no10.4)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.3)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput)
+```
+
+Did not pass all tests.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass all tests.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.2)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput)
+```
+
+Did not pass all tests.
+
+```{r}
+Anova(B_no10.3)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.1)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput) takes too long and failed test
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.2)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good either.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+Anova(B_no10.7)
+```
+
+```{r}
+summary(B_no10.7)
+```
+
+Model with access\*size passed the diagnostic tests.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.8)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Model with temperature passed diagnostic tests.
+
+```{r}
+Anova(B_no10.8)
+```
+
+```{r}
+summary(B_no10.8)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.9)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput)
+```
+
+Did not pass
+
+```{r}
+predictions_B_no10.8 <- ggpredict(B_no10.8, terms = c("temperature"), type = "fixed")
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.10)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+b.novelobj %>% ggplot(aes(access, prop.stimulated, color=housing)) + geom_point()
+```
+
+### Graph
+
+```{r}
+ggplot(predictions_B_no10.8, aes(x = x, y = predicted)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
+  theme_ggeffects() +
+    labs(x = "Temperature",
+        y = "Mean Duration of Stimulated (sec)") +
+  theme(text = element_text(family = "serif"))
+```
+
+Save plot:
+
+```{r}
+BR_Sti <- ggplot(predictions_B_no10.8, aes(x = x, y = predicted)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
+  theme_ggeffects() +
+    labs(x = "Temperature (°C)",
+        y = "Mean Duration of Stimulated (s)") +
+  theme(text = element_text(family = "serif"))+
+  theme(text = element_text(size = 16))
+```
+
+###Further analysis:
+
+```{r}
+B_no10.11 <- glm.nb(stimulated_NO ~  temperature *access + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+AIC(B_no10.11, B_no10.8)
+```
+
+```{r}
+summary(B_no10.11)
+summary(B_no10.8)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.11)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+It's good but it's more than 3 unit difference from lowest that passed.
+
+```{r}
+anova(B_no10.11)
+anova(B_no10.8)
+```
+
+```{r}
+predictions_B_no10.11 <- ggpredict(B_no10.11, terms = c("temperature","access"), type = "fixed")
+```
+
+```{r}
+ggplot(predictions_B_no10.11, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_line(size = 1) + 
+  facet_wrap(~ group) +
+  theme_ggeffects() +
+    labs(color = "Access",
+         fill = "Access",
+         x = "Temperature",
+        y = "Duration stimulated (sec)")+
+   scale_color_manual(values = c("salmon4", "lightseagreen")) +
+  scale_fill_manual(values = c("salmon4","lightseagreen")) 
+```
+
+Let's filter access outdoor
+
+```{r}
+test_o <- b.novelobj %>% filter(access == "Outdoor")
+```
+
+```{r}
+B_no10.8c <- glm.nb(stimulated_NO ~  temperature +
+                  offset(log_durationsec),
+                  data = test_o)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.8c)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+summary(B_no10.8c)
+```
+
+```{r}
+test_i <- b.novelobj %>% filter(access == "Indoor")
+```
+
+```{r}
+B_no10.8d <- glm.nb(stimulated_NO ~  temperature +
+                  offset(log_durationsec),
+                  data = test_i)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no10.8d)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+summary(B_no10.8d)
+```
+
+```{r}
+anova(B_no10.8d)
+```
+
+Not significant anymore
+
+```{r}
+predictions_B_no10.8d <- ggpredict(B_no10.8d, terms = c("temperature"), type = "fixed")
+```
+
+## 11. Active
+
+```{r}
+b.novelobj %>% ggplot(aes(prop.active)) + geom_histogram() + theme_ggeffects()
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, prop.active, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, prop.active, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(access, prop.active, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+B_no11.1c <- glmer.nb(active_NO ~  age + sex + housing +
+                  access + size + temperature +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+
+B_no11.1d <- glm.nb(active_NO ~  age + sex + housing +
+                  access + size + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+Determine if random effects should be included.
+
+```{r}
+summary(B_no11.1c)
+anova(B_no11.1c, B_no11.1d)
+```
+
+Institution ID doesn't variance in negative binomial models.
+
+```{r}
+drop1(B_no11.1d)
+```
+
+```{r}
+B_no11.2 <- glm.nb(active_NO ~ age + sex + housing +
+                  temperature + access + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no11.2)
+```
+
+```{r}
+B_no11.3 <- glm.nb(active_NO ~ age + sex + 
+                  temperature + access + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no11.3)
+```
+
+```{r}
+B_no11.4 <- glm.nb(active_NO ~  age + sex + access + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no11.4)
+```
+
+```{r}
+B_no11.5 <- glm.nb(active_NO ~  age + sex + 
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no11.5)
+```
+
+```{r}
+B_no11.6 <- glm.nb(active_NO ~  age +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no11.8 <- glm.nb(active_NO ~  sex +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no11.7 <- glm.nb(active_NO ~  1 +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+AIC(B_no11.1d, B_no11.2, B_no11.3, B_no11.4, B_no11.5, B_no11.6, B_no11.7, B_no11.8)
+```
+
+### Diagnostic plots:
+
+```{r}
+summary(B_no11.1d)
+summary(B_no11.5)
+summary(B_no11.4)
+summary(B_no11.6)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no11.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(B_no11.5)
+```
+
+did not pass diagnostics.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no11.4)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput) get an error from this code.
+
+Anova(B_no11.4)
+```
+
+Not good model either. Code can't even run properly.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no11.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(B_no11.6)
+```
+
+Did not pass diagnostics.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no11.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass combined adjusted quantile test.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no11.1d)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(B_no11.1d)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no11.3)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput) too long to load
+
+Anova(B_no11.1d)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no11.2)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput) too long to load
+
+Anova(B_no11.1d)
+```
+
+Not good.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no11.8)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+Anova(B_no11.8)
+```
+
+Model with sex passed diagnostic tests.
+
+## 12. Pacing
+
+```{r}
+b.novelobj %>% ggplot(aes(prop.pace)) + geom_histogram()+ theme_ggeffects()
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, prop.pace, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, prop.pace, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(access, prop.pace, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+B_no12.1a <- glmer.nb(pace_NO ~  age + sex + housing +
+                 access + size + temperature +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+
+B_no12.1b <- glm.nb(pace_NO ~  age + sex + housing +
+                  access + size + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+Determine if random effects should be included.
+
+```{r}
+summary(B_no12.1a)
+```
+
+```{r}
+B_no12.1 <-zeroinfl(pace_NO ~  age + sex + housing + access + size + temperature | 
+                      age + sex + housing + access + size + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+anova(B_no12.1a, B_no12.1)
+```
+
+```{r}
+AIC(B_no12.1, B_no12.1a, B_no12.1b)
+```
+
+Seems like the zero inflated negative binomial model works best
+
+```{r}
+summary(B_no12.1)
+```
+
+Model doesn't work
+
+Drop size
+
+Negative binomial models:
+
+```{r}
+drop1(B_no12.1a)
+```
+
+drop size
+
+```{r}
+B_no12.2a <- glm.nb(pace_NO ~  age + housing + sex +
+                  access + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+summary(B_no12.2a)
+```
+
+```{r}
+B_no12.3a <- glm.nb(pace_NO ~  age + housing +temperature + access +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+#summary(B_no12.3a) doesn't work
+```
+
+```{r}
+B_no12.4a <- glm.nb(pace_NO ~  age + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no12.4a) %>% arrange(-AIC) 
+```
+
+```{r}
+B_no12.5a <- glm.nb(pace_NO ~  age +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no12.6a <- glm.nb(pace_NO ~  sex +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no12.7a <- glm.nb(pace_NO ~  temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no12.8a <- glm.nb(pace_NO ~  housing +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no12.9a <- glm.nb(pace_NO ~  1 +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no12.10a <- glm.nb(pace_NO ~  housing + access + temperature+
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+Too much overdispersion Diagnostics:
+
+```{r}
+AIC(B_no12.1b, B_no12.2a, B_no12.3a, B_no12.4a, B_no12.5a, B_no12.6a, B_no12.7a, B_no12.8a, B_no12.9a, B_no12.10a)
+```
+
+Zero inflated models:
+
+```{r}
+B_no12.2 <-zeroinfl(pace_NO ~  age + housing + access + sex + temperature | 
+                      age + housing + access + sex + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+#drop1(B_no12.2) %>% arrange(-AIC) not working
+```
+
+```{r}
+#summary(B_no12.2) model didn't work
+```
+
+```{r}
+B_no12.3 <-zeroinfl(pace_NO ~  age + housing + access + temperature | 
+                      age + housing + access + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+summary(B_no12.3) #model did not work
+```
+
+```{r}
+B_no12.4 <-zeroinfl(pace_NO ~  age + housing + temperature | 
+                      access + housing + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+summary(B_no12.4) #model did not work
+```
+
+```{r}
+B_no12.5 <-zeroinfl(pace_NO ~  age + temperature | 
+                    access + housing + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+summary(B_no12.5)
+```
+
+```{r}
+B_no12.6 <-zeroinfl(pace_NO ~  age  | 
+                    access + housing + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+B_no12.6b <-zeroinfl(pace_NO ~  age  | 
+                    housing + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+B_no12.6c <-zeroinfl(pace_NO ~  age  | 
+                    access + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+B_no12.6d <-zeroinfl(pace_NO ~  1  | 
+                    access + temperature + housing +
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+summary(B_no12.6)
+```
+
+```{r}
+B_no12.7 <-zeroinfl(pace_NO ~  age | 
+                      access  + housing +
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+summary(B_no12.7)
+```
+
+```{r}
+B_no12.8 <-zeroinfl(pace_NO ~  age | 
+                      housing  + 
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+summary(B_no12.8)
+```
+
+```{r}
+B_no12.9 <-zeroinfl(pace_NO ~  1 | 
+                      housing  + 
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+summary(B_no12.9)
+```
+
+```{r}
+B_no12.10 <-zeroinfl(pace_NO ~  1 | 
+                      access  + 
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+summary(B_no12.10)
+```
+
+```{r}
+B_no12.11 <-zeroinfl(pace_NO ~  1 | 
+                      1  + 
+                  offset(log_durationsec),
+                  data = b.novelobj,
+                  dist = "negbin")
+```
+
+```{r}
+AIC(B_no12.1, B_no12.2, B_no12.3, B_no12.4, B_no12.5, B_no12.6, B_no12.6b, B_no12.6c,B_no12.6d, B_no12.7, B_no12.8, B_no12.9, B_no12.10, B_no12.11)
+```
+
+### Diagnostics:
+
+```{r}
+#simulationOutput <- simulateResiduals(B_no12.1)
+#plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput)
+```
+
+This function doesn't fully support `zeroinfl` models.
+
+```{r}
+summary(B_no12.6)
+summary(B_no12.6d)
+summary(B_no12.5)
+```
+
+doesn't pass diagnostics
+
+```{r}
+b.novelobj %>% ggplot(aes(temperature, prop.pace, color=access, shape = housing)) + geom_point() + theme_ggeffects()
+```
+
+## 13. Latency to approach (remove the ones that never approached - and check how many there were)
+
+```{r}
+b.novelobj %>% ggplot(aes(latency_sec)) + geom_histogram()+ theme_ggeffects()
+b.novelobj %>%  filter(rhino_id != "Black-947") %>% ggplot(aes(latency_sec)) + geom_histogram()+ theme_ggeffects()
+```
+
+```{r}
+b.novelobj %>% dplyr::select(rhino_id,latency_sec) %>% arrange(-latency_sec)
+b.novelobj %>% dplyr::select(rhino_id,latency_sec) %>% arrange(latency_sec)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, latency_sec, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, latency_sec, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(access, latency_sec, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+B_no13.1a <- glmer.nb(latency_sec ~  age + sex + housing +
+                 access + size + temperature +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+
+B_no13.1 <- glm.nb(latency_sec ~  age + sex + housing +
+                  access + size + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+Determine if random effects should be included.
+
+```{r}
+summary(B_no13.1a)
+anova(B_no13.1a, B_no13.1)
+```
+
+```{r}
+drop1(B_no13.1) %>% arrange(-AIC)
+```
+
+```{r}
+B_no13.2 <- glm.nb(latency_sec ~  age + sex + housing +
+                  size + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no13.2) %>% arrange(-AIC)
+```
+
+```{r}
+B_no13.3 <- glm.nb(latency_sec ~  age + sex + 
+                  size + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no13.3) %>% arrange(-AIC)
+```
+
+```{r}
+B_no13.4 <- glm.nb(latency_sec ~ sex + 
+                  size + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no13.4) %>% arrange(-AIC)
+```
+
+```{r}
+B_no13.5 <- glm.nb(latency_sec ~ size + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no13.5) %>% arrange(-AIC)
+```
+
+```{r}
+B_no13.6 <- glm.nb(latency_sec ~ temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no13.7 <- glm.nb(latency_sec ~ 1 +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+AIC(B_no13.7, B_no13.6, B_no13.5, B_no13.4, B_no13.3, B_no13.2, B_no13.1)
+```
+
+###Diagnostics:
+
+```{r}
+simulationOutput <- simulateResiduals(B_no13.1)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostics.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no13.5)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostics.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no13.4)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostics.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no13.3)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostics.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no13.6)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostics.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no13.2)
+plotQQunif(simulationOutput) 
+#plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostics.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no13.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostics.
+
+Now do it without the outlier. Investigate who's the outlier.
+
+```{r}
+b.novelobj %>% ggplot(aes(latency_sec)) + geom_histogram()+ theme_ggeffects()
+BRM_latency <- b.novelobj %>%  filter(rhino_id != "Black-947") 
+```
+
+```{r}
+BRM_latency %>%
+  ggplot(aes(age, latency_sec, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+BRM_latency %>%
+  ggplot(aes(temperature, latency_sec, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+BRM_latency %>%
+  ggplot(aes(access, latency_sec, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+B_no13.1a <- glmer.nb(latency_sec ~  age + sex + housing +
+                 access + size + temperature +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = BRM_latency)
+
+B_no13.1 <- glm.nb(latency_sec ~  age + sex + housing +
+                  access + size + temperature +
+                  offset(log_durationsec),
+                  data = BRM_latency)
+```
+
+Determine if random effects should be included.
+
+```{r}
+summary(B_no13.1a)
+anova(B_no13.1a, B_no13.1)
+```
+
+```{r}
+drop1(B_no13.1) %>% arrange(-AIC)
+```
+
+```{r}
+B_no13.2 <- glm.nb(latency_sec ~  age + sex + housing +
+                  size + temperature +
+                  offset(log_durationsec),
+                  data = BRM_latency)
+```
+
+```{r}
+drop1(B_no13.2) %>% arrange(-AIC)
+```
+
+```{r}
+B_no13.3 <- glm.nb(latency_sec ~  age + housing + 
+                  size + temperature +
+                  offset(log_durationsec),
+                  data = BRM_latency)
+```
+
+```{r}
+drop1(B_no13.3) %>% arrange(-AIC)
+```
+
+```{r}
+B_no13.4 <- glm.nb(latency_sec ~ age + 
+                  size + temperature +
+                  offset(log_durationsec),
+                  data = BRM_latency)
+```
+
+```{r}
+drop1(B_no13.4) %>% arrange(-AIC)
+```
+
+```{r}
+B_no13.5 <- glm.nb(latency_sec ~ size + temperature +
+                  offset(log_durationsec),
+                  data = BRM_latency)
+```
+
+```{r}
+drop1(B_no13.5) %>% arrange(-AIC)
+```
+
+```{r}
+B_no13.6 <- glm.nb(latency_sec ~ temperature +
+                  offset(log_durationsec),
+                  data = BRM_latency)
+```
+
+```{r}
+B_no13.7 <- glm.nb(latency_sec ~ 1 +
+                  offset(log_durationsec),
+                  data = BRM_latency)
+```
+
+### Diagnostics:
+
+```{r}
+AIC(B_no13.7, B_no13.6, B_no13.5, B_no13.4, B_no13.3, B_no13.2, B_no13.1)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no13.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostics.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no13.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostics.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no13.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostics.
+
+```{r}
+simulationOutput <- simulateResiduals(B_no13.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostics.
+
+B_no13.6 passed tests. Model with temperature.
+
+```{r}
+summary(B_no13.6)
+anova(B_no13.6)
+```
+
+Temperature is not significant. Double-check if it's okay to remove Black-947.
+
+## 14. Unstimulated
+
+Data visualization:
+
+```{r}
+b.novelobj %>% ggplot(aes(prop.unstimulated)) + geom_histogram()+ theme_ggeffects() 
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, prop.unstimulated, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, prop.unstimulated, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(access, prop.unstimulated, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+B_no14.1a <- glmer.nb(unstimulated_NO ~  age + sex + housing +
+                 access + size + temperature +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+
+B_no14.1 <- glm.nb(unstimulated_NO ~  age + sex + housing +
+                  access + size + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+Determine if random effects should be included.
+
+```{r}
+summary(B_no14.1a)
+anova(B_no14.1a, B_no14.1)
+```
+
+```{r}
+AIC(B_no14.1, B_no14.1a)
+```
+
+```{r}
+drop1(B_no14.1a)
+```
+
+```{r}
+B_no14.2 <- glmer.nb(unstimulated_NO ~  age + sex + housing +
+                 access + size  +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no14.2)
+```
+
+```{r}
+B_no14.3 <- glmer.nb(unstimulated_NO ~  age + sex +
+                 access + size  +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no14.3)
+```
+
+```{r}
+B_no14.4 <- glmer.nb(unstimulated_NO ~  age + access + size  +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no14.4)
+```
+
+```{r}
+B_no14.5 <- glmer.nb(unstimulated_NO ~  access + size  +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no14.5)
+```
+
+```{r}
+B_no14.6 <- glmer.nb(unstimulated_NO ~  access +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no14.7 <- glmer.nb(unstimulated_NO ~  1 +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no14.8 <- glmer.nb(unstimulated_NO ~  temperature +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no14.9 <- glmer.nb(unstimulated_NO ~  age +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no14.10 <- glmer.nb(unstimulated_NO ~  sex +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+AIC(B_no14.1a, B_no14.2, B_no14.3, B_no14.4, B_no14.5, B_no14.6, B_no14.7, B_no14.8, B_no14.9, B_no14.10)
+```
+
+### Diagnostic plots:
+
+```{r}
+summary(B_no14.1a)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no14.1a)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+Anova(B_no14.1a)
+```
+
+```{r}
+summary(B_no14.3)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no14.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+Anova(B_no14.3)
+```
+
+Did not pass diagnostics.
+
+```{r}
+summary(B_no14.2)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no14.2)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no14.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no14.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no14.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no14.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(B_no14.8)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+Anova(B_no14.8)
+```
+
+Even though the AIC is much lower, it still didn't pass the diagnostic tests.
+
+Did not pass diagnostics.
+
+## 15. Inactive
+
+```{r}
+b.novelobj %>% ggplot(aes(prop.inactive)) + geom_histogram()+ theme_ggeffects() 
+```
+
+Not normal.
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, prop.inactive, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(temperature, prop.inactive, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(access, prop.inactive, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+b.novelobj %>%
+  ggplot(aes(age, prop.inactive, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+B_no15.1a <- glmer.nb(inactive_NO ~  age + sex + housing +
+                 access + size + temperature +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = b.novelobj)
+
+B_no15.1 <- glm.nb(inactive_NO ~  age + sex + housing +
+                  access + size + temperature +
+                  offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+Determine if random effects should be included.
+
+```{r}
+summary(B_no15.1a)
+anova(B_no15.1a, B_no15.1)
+```
+
+```{r}
+AIC(B_no15.1, B_no15.1a)
+```
+
+```{r}
+drop1(B_no15.1)
+```
+
+```{r}
+B_no15.2 <- glm.nb(inactive_NO ~  age + sex + housing +
+                 access + temperature  + offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no15.2)
+```
+
+```{r}
+B_no15.3 <- glm.nb(inactive_NO ~  age + sex + housing +
+                 temperature + offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no15.3)
+```
+
+```{r}
+B_no15.4 <- glm.nb(inactive_NO ~  age + sex + housing +
+                 offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no15.4)
+```
+
+```{r}
+B_no15.5 <- glm.nb(inactive_NO ~  age + sex + 
+                 offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+drop1(B_no15.5)
+```
+
+```{r}
+B_no15.6 <- glm.nb(inactive_NO ~  age + 
+                 offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+B_no15.7 <- glm.nb(inactive_NO ~  1 + 
+                 offset(log_durationsec),
+                  data = b.novelobj)
+```
+
+```{r}
+AIC(B_no15.1, B_no15.2, B_no15.3, B_no15.4, B_no15.5, B_no15.6, B_no15.7)
+```
+
+### Diagnostic plots:
+
+```{r}
+summary(B_no15.1)
+simulationOutput <- simulateResiduals(B_no15.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(B_no15.1)
+```
+
+```{r}
+summary(B_no15.4)
+simulationOutput <- simulateResiduals(B_no15.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(B_no15.4)
+```
+
+Did not pass diagnostics.
+
+```{r}
+summary(B_no15.3)
+simulationOutput <- simulateResiduals(B_no15.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(B_no15.3)
+```
+
+Did not pass diagnostics.
+
+```{r}
+summary(B_no15.5)
+simulationOutput <- simulateResiduals(B_no15.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostics.
+
+```{r}
+summary(B_no15.6)
+simulationOutput <- simulateResiduals(B_no15.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass diagnostics.
+
+```{r}
+summary(B_no15.7)
+simulationOutput <- simulateResiduals(B_no15.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostics. Chosen model.
+
+# WHITE RHINO DEMO-ENVIRO
+
+PCs from PCA are not modeled because they cluster similar behaviors
+
+## 1. Retreat
+
+```{r}
+w.novelobj %>% ggplot(aes(freq.retreat)) + geom_histogram() + theme_ggeffects()
+```
+
+Not included.
+
+## 2. Pant calls
+
+Visualization:
+
+```{r}
+w.novelobj %>% ggplot(aes(freq.pant)) + geom_histogram() + theme_ggeffects()
+```
+
+Not normal. Mostly zeroes.
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.pant, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.pant, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, freq.pant, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(access, freq.pant, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(size, freq.pant, color = access)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(housing, freq.pant, color = sex)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(calf_present, freq.pant, color = sex)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+W_no2.1a <- glmer.nb(pant_NO ~ age + sex + housing + birth_type +
+                     access + size + temperature + calf_present + (1|inst_id) + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+
+W_no2.1 <- glm.nb(pant_NO ~  age + sex + housing + birth_type +
+                  access + size + temperature + calf_present + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+anova(W_no2.1a, W_no2.1)
+```
+
+Institution ID makes no difference.
+
+```{r}
+drop1(W_no2.1)
+```
+
+```{r}
+W_no2.2 <- glm.nb(pant_NO ~  sex + housing + birth_type +
+                  access + size + temperature + calf_present + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no2.2)
+```
+
+```{r}
+W_no2.3 <- glm.nb(pant_NO ~  sex + housing + birth_type +
+                  access + temperature + calf_present + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no2.3)
+```
+
+```{r}
+W_no2.4 <- glm.nb(pant_NO ~  sex + birth_type +
+                  access + temperature + calf_present + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no2.4)
+```
+
+```{r}
+W_no2.5 <- glm.nb(pant_NO ~  sex + birth_type +
+                  access + calf_present + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no2.5)
+```
+
+```{r}
+W_no2.6 <- glm.nb(pant_NO ~  sex + birth_type + calf_present + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no2.6)
+```
+
+```{r}
+W_no2.7 <- glm.nb(pant_NO ~  sex + calf_present + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+W_no2.7a <- glmer.nb(pant_NO ~  sex +  (1 | sex/calf_present) + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+W_no2.7b <- glm.nb(pant_NO ~  sex +  sex:calf_present + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no2.7)
+```
+
+```{r}
+W_no2.8 <- glm.nb(pant_NO ~  sex + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+W_no2.9 <- glm.nb(pant_NO ~  1 + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+Check AIC:
+
+```{r}
+AIC(W_no2.9, W_no2.8, W_no2.7, W_no2.6, W_no2.5, W_no2.4, W_no2.3, W_no2.2, W_no2.1, W_no2.7a)
+AIC(W_no2.7, W_no2.7a, W_no2.7b)
+```
+
+### Diagnostics:
+
+```{r}
+simulationOutput <- simulateResiduals(W_no2.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed tests.
+
+```{r}
+summary(W_no2.1)
+Anova(W_no2.1)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no2.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed tests.
+
+```{r}
+summary(W_no2.4)
+Anova(W_no2.4)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no2.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed tests.
+
+```{r}
+summary(W_no2.6)
+Anova(W_no2.6)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no2.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed tests.
+
+```{r}
+summary(W_no2.3)
+Anova(W_no2.3)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no2.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed tests.
+
+```{r}
+summary(W_no2.5)
+Anova(W_no2.5)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no2.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed tests.
+
+```{r}
+summary(W_no2.7)
+Anova(W_no2.7)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no2.7a)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed tests.
+
+```{r}
+summary(W_no2.7a)
+Anova(W_no2.7a)
+anova(W_no2.7a, W_no2.8)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no2.8)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed tests.
+
+```{r}
+summary(W_no2.8)
+Anova(W_no2.8)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no2.7b)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed tests.
+
+```{r}
+summary(W_no2.7b)
+Anova(W_no2.7b)
+```
+
+### Graph
+
+```{r}
+predictions <- ggpredict(W_no2.7b, terms = c("sex","calf_present"), type = "fixed")
+
+predictions <- predictions %>% filter(!(x == "Male" & group == "Yes"))
+```
+
+```{r}
+ggplot(predictions, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_boxplot(size = 1, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), 
+                width = 0.1,  
+                position = position_dodge(0.5)) +
+  scale_color_manual(values = c("gray32","gold")) +
+  scale_fill_manual(values = c("gray32","gold")) +
+  theme_ggeffects() +
+    labs(color = "Calf",
+         fill = "Calf",
+         x = "Sex", 
+       y = "Mean Count of Pant") +
+ theme(text = element_text(family = "serif")) +
+  showSignificance( c(1.8,2.1), 8.3, -0.05, "*") +
+  showSignificance( c(1,2.1), 9, -0.05, "*") +
+  ylim(0,9.25)
+```
+
+Save plot:
+
+```{r}
+WR_Pant <- ggplot(predictions, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_boxplot(size = 1, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), 
+                width = 0.1,  
+                position = position_dodge(0.5)) +
+  scale_color_manual(values = c("gray32","gold")) +
+  scale_fill_manual(values = c("gray32","gold")) +
+  theme_ggeffects() +
+    labs(color = "Calf",
+         fill = "Calf",
+         x = "Sex", 
+    y = "Mean Count of Pant") +
+ theme(text = element_text(family = "serif")) +
+  showSignificance( c(1.8,2.1), 8.3, -0.05, "*") +
+  showSignificance( c(1,2.1), 9, -0.05, "*") +
+  ylim(0,9.25) +
+  theme(text = element_text(size = 15))
+```
+
+## 3. Olfactory with object
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(freq.olfact_obj)) + geom_histogram() + theme_ggeffects()
+```
+
+Not normal distribution. Right skewed.
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.olfact_obj, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.olfact_obj, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, freq.olfact_obj, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(access, freq.olfact_obj, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(size, freq.olfact_obj, color = access)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(housing, freq.olfact_obj, color = sex)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, freq.olfact_obj, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+We see different trends for access and size. Thus, we need to include the interaction of them in the models.
+
+### Modelling:
+
+```{r}
+W_no3.1a <- glmer.nb(olfact_obj_NO ~ age + sex + housing + birth_type +
+                     access + size + temperature + calf_present + (1|inst_id) + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+
+W_no3.1 <- glm.nb(olfact_obj_NO ~  age + sex + housing + birth_type +
+                  access + size + temperature + calf_present + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+Determine if random effects should be included.
+
+```{r}
+summary(W_no3.1a)
+anova(W_no3.1a,W_no3.1)
+```
+
+```{r}
+drop1(W_no3.1)
+```
+
+```{r}
+W_no3.1a <- glm.nb(olfact_obj_NO ~  age + sex + housing + birth_type + size+
+                  temperature:access + calf_present + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+W_no3.2 <- glm.nb(olfact_obj_NO ~  age + sex + housing + birth_type +
+                  access + size + temperature +
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no3.2)
+```
+
+```{r}
+W_no3.3 <- glm.nb(olfact_obj_NO ~  age + sex + housing + birth_type +
+                  access+temperature +
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no3.3)
+```
+
+```{r}
+W_no3.4 <- glm.nb(olfact_obj_NO ~  age + sex + housing + birth_type +
+                  temperature +
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no3.4)
+```
+
+```{r}
+W_no3.5 <- glm.nb(olfact_obj_NO ~  age + sex + housing + temperature +
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+W_no3.5b <- glm.nb(olfact_obj_NO ~  age + sex + housing + temperature*access  +
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+summary(W_no3.5)
+```
+
+```{r}
+drop1(W_no3.5)
+```
+
+```{r}
+W_no3.6 <- glm.nb(olfact_obj_NO ~  age + sex + temperature +
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+W_no3.6a <- glm.nb(olfact_obj_NO ~  age + sex + temperature:access  +
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no3.6)
+```
+
+```{r}
+W_no3.7 <- glm.nb(olfact_obj_NO ~  age + temperature +
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no3.7)
+```
+
+```{r}
+W_no3.7a <- glm.nb(olfact_obj_NO ~  age + temperature:access +
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+W_no3.8 <- glm.nb(olfact_obj_NO ~ temperature + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+W_no3.8a <- glm.nb(olfact_obj_NO ~ temperature:access + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+W_no3.9 <- glm.nb(olfact_obj_NO ~ 1 + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+W_no3.10 <- glm.nb(olfact_obj_NO ~ temperature * access + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+AIC(W_no3.1,W_no3.1a, W_no3.2, W_no3.3, W_no3.4, W_no3.5, W_no3.6, W_no3.6a, W_no3.7,W_no3.7a, W_no3.8,W_no3.8a, W_no3.9, W_no3.10) %>% arrange(AIC)
+```
+
+W_no3.5, which includes age, sex, housing, and temperature is the best model.
+
+### Diagnostic plots:
+
+```{r}
+par(mfrow = c(1,1))
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no3.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass combined adjusted quantile test. However, all three lines are still parallel and the combined adjusted quantile test is not significant.
+
+This is the best model (lowest AIC).
+
+```{r}
+summary(W_no3.5)
+```
+
+Create a table with estimates and confidence intervals using `cbind` function.
+
+```{r}
+est <- cbind(Estimate = coef(W_no3.5), confint(W_no3.5))
+```
+
+Now, use `exp` to get real estimates and confidence intervals for our variables in our model of interest:
+
+```{r}
+exp(est)
+```
+
+-- As rhinos age, the count of olfactory w/object decreases by 0.98 each year. - The count for olfactory w/object is 0.59 lower in males compared to females. - Solitarily housed rhinos display twice the count of olfactory w/object than socially housed rhinos. - As temperature increase by 1 degree Fahrenheit, count of olfactory w/object decreases by 0.98.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no3.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostic tests.
+
+```{r}
+summary(W_no3.4)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no3.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Combined adjusted quantrile test significant
+
+```{r}
+summary(W_no3.5)
+```
+
+Create a table with estimates and confidence intervals using `cbind` function.
+
+```{r}
+est <- cbind(Estimate = coef(W_no3.4), confint(W_no3.4))
+```
+
+Now, use `exp` to get real estimates and confidence intervals for our variables in our model of interest:
+
+```{r}
+exp(est)
+```
+
+-   As rhinos age, the count of olfactory w/object decreases by 0.97 each year.
+-   The count for olfactory w/object is 0.6 lower in males compared to females.
+-   Solitarily housed rhinos display twice the count of olfactory w/object than socially housed rhinos.
+-   As temperature increase by 1 degree Fahrenheit, count of olfactory w/object decreases by 0.98.
+
+```{r}
+Anova(W_no3.4)
+```
+
+Both show that age, sex, housing, and temperature variables are significant. Birth type (captive/wild) is not significant.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no3.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+```{r}
+summary(W_no3.3)
+```
+
+This model passed all diagnostic tests as well. Create a table with estimates and confidence intervals using `cbind` function.
+
+```{r}
+est <- cbind(Estimate = coef(W_no3.3), confint(W_no3.3))
+```
+
+Now, use `exp` to get real estimates and confidence intervals for our variables in our model of interest:
+
+```{r}
+exp(est)
+```
+
+Same as previous model, for the significant variables, these are the values:
+
+-   As rhinos age, the count of olfactory w/object decreases by 0.97 each year.
+-   The count for olfactory w/object is 0.6 lower in males compared to females.
+-   Solitarily housed rhinos display twice the count of olfactory w/object than socially housed rhinos.
+-   As temperature increase by 1 degree Fahrenheit, count of olfactory w/object decreases by 0.98.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no3.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+
+Anova(W_no3.1)
+```
+
+### Graph:
+
+Use `ggpredict` to create dataframe:
+
+```{r}
+predictions_W_no3.5 <- ggpredict(W_no3.5, terms = c("age","temperature","sex","housing"),
+               type = "fixed")
+```
+
+To have 'social' and ''solitary' capitalized in graph: Change column as character.
+
+```{r}
+predictions_W_no3.5$panel <- as.character(predictions_W_no3.5$panel)
+```
+
+Rewrite values:
+
+```{r}
+ggplot(predictions_W_no3.5, aes(x = x, y = predicted, color = group)) +
+  geom_line(size = 1) +  # Add lines for the predictions
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.1) +  # Add confidence intervals
+  facet_grid(panel ~ facet) +  # Facet by housing and gender
+  scale_color_manual(values = c("blue3","green","red2")) +
+  scale_fill_manual(values = c("blue3","green","red2")) +
+  labs(
+       x = "Age (years)",
+              y = "Mean Count of Olfactory to Object",
+       color = "Temperature (°C)",
+       fill = "Temperature (°C)") +
+  theme_ggeffects()   +
+  theme(text = element_text(size = 18)) +
+   theme(axis.text = element_text(size = 14))
+```
+
+Save plot:
+
+```{r}
+WR_OlfObj <-ggplot(predictions_W_no3.5, aes(x = x, y = predicted, color = group)) +
+  geom_line(size = 1) +  # Add lines for the predictions
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.1) +  # Add confidence intervals
+  facet_grid(panel ~ facet) +  # Facet by housing and gender
+  scale_color_manual(values = c("blue3","green","red2")) +
+  scale_fill_manual(values = c("blue3","green","red2")) +
+  labs(
+       x = "Age (years)",
+              y = "Mean Count of Olfactory to Object",
+       color = "Temperature (°C)",
+       fill = "Temperature (°C)") +
+  theme_ggeffects()   +
+  theme(text = element_text(family = "serif")) +
+  theme(text = element_text(size = 15))
+```
+
+### Further analyses:
+
+```{r}
+W_no3.5b <- glm.nb(olfact_obj_NO ~  age + sex + housing +
+                  access*temperature  + 
+                  offset(log_duration), 
+                  data = w.novelobj)
+```
+
+```{r}
+AIC(W_no3.5b, W_no3.5)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no3.5b)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Model passed diagnostics
+
+```{r}
+Anova(W_no3.5b)
+```
+
+```{r}
+summary(W_no3.5b)
+```
+
+When we consider the interaction between access and temperature, temperature isn't significant anymore.
+
+```{r}
+w.novelobj %>%  ggplot(aes(temperature, freq.olfact_obj, fill=access, color=access)) +
+  geom_point()+
+  geom_smooth() +
+  theme_ggeffects()
+```
+
+Just considering the interaction, we see that in colder temps and when indoor, freq. is higher but there are 2 points that are causing this difference.
+
+```{r}
+w.novelobj %>%  ggplot(aes(temperature, freq.olfact_obj)) +
+  geom_point()+
+  geom_smooth() +
+  theme_ggeffects()
+```
+
+If we don't include the interaction, it seems freq. goes down as temp increases.
+
+```{r}
+predictions_W_no3.5b <- ggpredict(W_no3.5b, terms = c("age","temperature","sex","housing","access"),
+               type = "fixed")
+```
+
+To have 'social' and ''solitary' capitalized in graph: Change column as character.
+
+```{r}
+predictions_W_no3.5b$panel <- as.character(predictions_W_no3.5b$panel)
+```
+
+Rewrite values:
+
+```{r}
+ggplot(predictions_W_no3.5b, aes(x = group, y = predicted, color = x, fill = group)) +
+  geom_boxplot(size = 1) +  # Add lines for the predictions
+  facet_grid(facet ~grid * panel)+
+  scale_color_manual(values = c("blue3","green","red2")) +
+  scale_fill_manual(values = c("blue3","green","red2")) +
+  theme_ggeffects() +
+  labs(x = "Temperature",
+       y = "Mean Count of Olfact w/Object",
+       color = "Temperature",
+       fill = "Temperature")+
+  theme(text = element_text(family = "serif"))
+```
+
+## 4. Olfactory with other
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(freq.olfact_other)) + geom_histogram() + theme_ggeffects()
+```
+
+It does not show a normal distribution
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.olfact_other, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.olfact_other, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, freq.olfact_other, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(size, freq.olfact_other, color = access)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(size, freq.olfact_other, color = sex)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.olfact_other, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+Freq. olfactory with other in females tends to decrease with age and stays constant in males. Incorporate interaction between these variables in the models.
+
+### Modelling:
+
+```{r}
+W_no4.1a <- glmer.nb(olfact_other_NO ~ age * sex + housing + birth_type +
+                     access + size + temperature + calf_present + (1|inst_id) + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+
+W_no4.1 <- glm.nb(olfact_other_NO ~ age * sex + housing + birth_type +
+                     access + size + temperature + calf_present +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(W_no4.1a)
+anova(W_no4.1a,W_no4.1)
+```
+
+Include institution.
+
+```{r}
+drop1(W_no4.1a)
+```
+
+```{r}
+W_no4.2 <- glmer.nb(olfact_other_NO ~ age * sex + housing + birth_type +
+                     size + temperature + access + (1|inst_id) +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no4.2) %>% arrange(AIC)
+```
+
+```{r}
+W_no4.3 <- glmer.nb(olfact_other_NO ~ age * sex + housing + birth_type +
+                     size + temperature + (1|inst_id) +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no4.3) %>% arrange(AIC)
+```
+
+```{r}
+W_no4.4 <- glmer.nb(olfact_other_NO ~ age * sex + housing +
+                     size + temperature + (1|inst_id) +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no4.4) %>% arrange(AIC)
+```
+
+```{r}
+W_no4.5 <- glmer.nb(olfact_other_NO ~ age * sex + housing +
+                     size + (1|inst_id) +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no4.5) %>% arrange(AIC)
+```
+
+```{r}
+W_no4.6 <- glmer.nb(olfact_other_NO ~ age * sex +
+                     size + (1|inst_id) +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no4.6) %>% arrange(AIC)
+```
+
+```{r}
+W_no4.7 <- glmer.nb(olfact_other_NO ~ size + (1|inst_id) +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+W_no4.7a <- glm.nb(olfact_other_NO ~ size  +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+AIC(W_no4.7, W_no4.7a)
+```
+
+doesn't make a difference
+
+```{r}
+W_no4.8 <- glmer.nb(olfact_other_NO ~ sex + (1|inst_id) +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+W_no4.9 <- glmer.nb(olfact_other_NO ~ age + (1|inst_id) +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+W_no4.10 <- glmer.nb(olfact_other_NO ~ 1 + (1|inst_id) +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+AIC(W_no4.1, W_no4.2, W_no4.3, W_no4.4, W_no4.5, W_no4.6, W_no4.7, W_no4.8, W_no4.9, W_no4.10) %>% arrange(AIC)
+```
+
+### Diagnostic plots:
+
+```{r}
+par(mfrow = c(1,1))
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no4.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostic tests.
+
+```{r}
+Anova(W_no4.7)
+summary(W_no4.7)
+```
+
+Age is not significant.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no4.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostic tests.
+
+```{r}
+summary(W_no4.7)
+Anova(W_no4.7)
+```
+
+Size is significant in this model.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no4.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostic tests.
+
+```{r}
+Anova(W_no4.5)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no4.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Didn't pass diagnostic tests.
+
+```{r}
+Anova(W_no4.4)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no4.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostic tests.
+
+```{r}
+Anova(W_no4.6)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no4.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no4.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+Combined adjusted quantile test is significant.
+
+Graph best model:
+
+```{r}
+predictions <- ggpredict(W_no4.7, terms = "size", type = "fixed")
+```
+
+### Graph
+
+```{r}
+ggplot(predictions, aes(x = x, y = predicted)) +
+  geom_boxplot(size = 1, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1)  +
+  theme_ggeffects() +
+    labs(x = "Enclosure Size", 
+       y = "Mean Count of Olfactory with Other")+
+  theme(text = element_text(family = "serif"))
+```
+
+```{r}
+ggplot(predictions, aes(x = x, y = predicted)) +
+  geom_boxplot(size = 1, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1)  +
+  theme_ggeffects() +
+    labs(x = "Enclosure Size", 
+       y = "Mean Count of Olfactory with Other")+
+  theme(text = element_text(family = "serif")) +
+  showSignificance( c(1,3), 7.3, -0.03, "*") +
+  showSignificance( c(1,2), 5, -0.03, "NS") +
+  showSignificance( c(2,3), 6.7, -0.03, "*") +
+  ylim(0,7.5)
+```
+
+Save plot:
+
+```{r}
+WR_OlfOther <- ggplot(predictions, aes(x = x, y = predicted)) +
+  geom_boxplot(size = 1, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1)  +
+  theme_ggeffects() +
+    labs(x = "Enclosure Size", 
+       y = "Mean Count of Olfactory with Other")+
+  theme(text = element_text(family = "serif")) +
+  showSignificance( c(1,3), 7.3, -0.03, "*") +
+  showSignificance( c(1,2), 5, -0.03, "NS") +
+  showSignificance( c(2,3), 6.7, -0.03, "*") +
+  ylim(0,7.5) +
+  theme(text = element_text(size = 15))
+```
+
+## 5. Marking
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(freq.marking)) + geom_histogram()+ theme_ggeffects()
+```
+
+Mostly all zeroes.
+
+It does not show a normal distribution
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.marking, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.marking, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, freq.marking, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(access, freq.marking, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.marking, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, freq.marking, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+W_no5.1a <- glmer.nb(freq.marking ~ age + sex + housing +
+                     access + size + temperature +calf_present + birth_type+ (1|inst_id) + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+
+W_no5.1 <- glm.nb(freq.marking ~ age + sex + housing +
+                     access + size + temperature + calf_present +birth_type +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+anova(W_no5.1a, W_no5.1)
+```
+
+Do not include
+
+```{r}
+drop1(W_no5.1)
+```
+
+```{r}
+W_no5.2 <- glm.nb(freq.marking ~ age + sex + housing +
+                     access  + temperature + birth_type + calf_present +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no5.2)
+```
+
+```{r}
+W_no5.3 <- glm.nb(freq.marking ~ age + sex + housing 
+                       + temperature + birth_type + calf_present +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no5.3)
+```
+
+```{r}
+W_no5.4 <- glm.nb(freq.marking ~ age + sex + housing+ birth_type + calf_present +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no5.4)
+```
+
+```{r}
+W_no5.5 <- glm.nb(freq.marking ~ age +sex + housing+ calf_present +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no5.5)
+```
+
+```{r}
+W_no5.6 <- glm.nb(freq.marking ~ sex + housing + calf_present +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no5.6)
+```
+
+```{r}
+W_no5.7 <- glm.nb(freq.marking ~ sex + housing + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no5.7)
+```
+
+```{r}
+W_no5.8 <- glm.nb(freq.marking ~ sex  + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+W_no5.9<- glm.nb(freq.marking ~ 1  + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+### Diagnostics:
+
+Check AIC:
+
+```{r}
+AIC(W_no5.9, W_no5.8, W_no5.7, W_no5.6, W_no5.5, W_no5.4, W_no5.3, W_no5.2, W_no5.1)
+```
+
+```{r}
+summary(W_no5.9)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no5.9)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(W_no5.8)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(W_no5.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(W_no5.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(W_no5.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(W_no5.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(W_no5.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(W_no5.2)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+```{r}
+simulationOutput <- simulateResiduals(W_no5.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+## 6. Advanced directed
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(freq.advance_direct)) + geom_histogram()+ theme_ggeffects() 
+```
+
+It does not show a normal distribution
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.advance_direct, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.advance_direct, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, freq.advance_direct, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(access, freq.advance_direct, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(size, freq.advance_direct, color = access)) + 
+  geom_boxplot() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.advance_direct, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, freq.advance_direct, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+Can't see any trends from any of these graphs.
+
+### Modelling:
+
+```{r}
+W_no6.1a <- glmer.nb(advance_direct_NO ~ age + sex + housing + birth_type +
+                     access + size + temperature + calf_present + (1|inst_id) + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+
+W_no6.1 <- glm.nb(advance_direct_NO ~ age + sex + housing + birth_type +
+                     access + size + temperature + calf_present +  
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(W_no6.1a)
+anova(W_no6.1a,W_no6.1)
+```
+
+```{r}
+drop1(W_no6.1)
+```
+
+```{r}
+W_no6.2 <- glm.nb(advance_direct_NO ~ age + sex + birth_type +
+                     access + size + temperature + calf_present +  
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no6.2)
+```
+
+```{r}
+W_no6.3 <- glm.nb(advance_direct_NO ~ age +birth_type +
+                     access + size + temperature + calf_present + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no6.3)
+```
+
+```{r}
+W_no6.4 <- glm.nb(advance_direct_NO ~ age +birth_type +
+                     access + size + calf_present + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no6.4)
+```
+
+```{r}
+W_no6.5 <- glm.nb(advance_direct_NO ~ age + birth_type +
+                     access + calf_present + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no6.5)
+```
+
+```{r}
+W_no6.6 <- glm.nb(advance_direct_NO ~ age + birth_type + access +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no6.6)
+```
+
+```{r}
+W_no6.7 <- glm.nb(advance_direct_NO ~ age + access +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no6.7)
+```
+
+```{r}
+W_no6.8 <- glm.nb(advance_direct_NO ~ access +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+W_no6.9 <- glm.nb(advance_direct_NO ~ 1 +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+AIC(W_no6.1, W_no6.2, W_no6.3, W_no6.4, W_no6.5, W_no6.6, W_no6.7, W_no6.8, W_no6.9) %>% arrange(AIC)
+```
+
+### Diagnostic plots:
+
+```{r}
+par(mfrow = c(1,1))
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no6.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all diagnostic tests.
+
+```{r}
+Anova(W_no6.4)
+```
+
+Birth type, age, and enclosure access are significant.
+
+```{r}
+summary(W_no6.4)
+```
+
+Age, access, and size S have a negative effect, while wild birth type, size M and calf presence has a positive effect.
+
+Create a table with estimates and confidence intervals using `cbind` function.
+
+```{r}
+est <- cbind(Estimate = coef(W_no6.4), confint(W_no6.4))
+```
+
+Now, use `exp` to get ratios and confidence intervals for our variables in our model of interest:
+
+```{r}
+exp(est)
+```
+
+Age: rhinos advance toward the basket 0.98 times less per year. Birth: wild rhinos advance towards the basket 1.78 more than captive born rhinos. Access: rhinos with outdoor access advance towards the basket 0.54 less than rhinos with indoor access.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no6.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Did not pass all tests.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no6.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no6.7)
+```
+
+Access is significant.
+
+```{r}
+summary(W_no6.7)
+```
+
+Create a table with estimates and confidence intervals using `cbind` function.
+
+```{r}
+est <- cbind(Estimate = coef(W_no6.7), confint(W_no6.7))
+```
+
+Now, use `exp` to get ratios and confidence intervals for our variables in our model of interest:
+
+```{r}
+exp(est)
+```
+
+Access: rhinos with outdoor access advance towards the basket 0.66 less than rhinos with indoor access.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no6.8)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all diagnostic tests.
+
+```{r}
+Anova(W_no6.8)
+```
+
+```{r}
+summary(W_no6.8)
+```
+
+```{r}
+predictions_W_no6.8 <- ggpredict(W_no6.8, terms = "access", type = "fixed")
+```
+
+```{r}
+ggplot(predictions_W_no6.8, aes(x = x, y = predicted)) +
+  geom_boxplot(size = 1, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), 
+                width = 0.1,  
+                position = position_dodge(0.5)) +
+  theme_ggeffects() +
+    labs(
+         x = "Access", 
+       y = "Mean Count of Advance direct") +
+ theme(text = element_text(family = "serif")) 
+```
+
+Access is not significant.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no6.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+Passed all tests.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no6.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+Failed combined adjusted quantile test.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no6.9)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+Passed all tests.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no6.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+### Graph:
+
+Graph simplest model (not significant):
+
+```{r}
+plot(ggpredict(W_no6.8, terms = "access", type = "fixed")) +
+  labs(title = "Predicted: Advance Directed",
+       x = "Access",
+       y = "Mean Count of Advance Directed")
+```
+
+## 7. Contact interaction
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(freq.contact_inx)) + geom_histogram()+ theme_ggeffects() 
+```
+
+It does not show a normal distribution
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.contact_inx, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.contact_inx, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, freq.contact_inx, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(access, freq.contact_inx, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.contact_inx, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, freq.contact_inx, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+W_no7.1a <- glmer.nb(contact_inx_NO ~ age + sex + housing + birth_type +
+                     access + size + temperature + calf_present + (1|inst_id) + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+
+W_no7.1 <- glm.nb(contact_inx_NO ~ age + sex + housing + birth_type +
+                     access + size + temperature + calf_present + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(W_no7.1a)
+anova(W_no7.1a,W_no7.1)
+```
+
+don't include RE
+
+```{r}
+drop1(W_no7.1)
+drop1(W_no7.1a)
+```
+
+```{r}
+W_no7.2 <- glm.nb(contact_inx_NO ~ age + sex + housing + birth_type +
+                     access + temperature + calf_present + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no7.2)
+```
+
+```{r}
+W_no7.3 <- glm.nb(contact_inx_NO ~ age + sex + housing +
+                     access + temperature + calf_present + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no7.3)
+```
+
+```{r}
+W_no7.4 <- glm.nb(contact_inx_NO ~ age + sex + housing +
+                     access + temperature + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no7.4)
+```
+
+```{r}
+W_no7.5 <- glm.nb(contact_inx_NO ~ age + sex +
+                     access + temperature + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no7.5)
+```
+
+```{r}
+W_no7.6 <- glm.nb(contact_inx_NO ~ age + sex + temperature + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no7.6)
+```
+
+```{r}
+W_no7.7 <- glm.nb(contact_inx_NO ~ age + temperature + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no7.7)
+```
+
+```{r}
+W_no7.8 <- glm.nb(contact_inx_NO ~ temperature +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+W_no7.9 <- glm.nb(contact_inx_NO ~ 1 +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+AIC(W_no7.1,W_no7.1a, W_no7.2, W_no7.3, W_no7.4, W_no7.5, W_no7.6, W_no7.7, W_no7.8, W_no7.9) %>% arrange(AIC)
+```
+
+### Diagnostic plots:
+
+```{r}
+par(mfrow = c(1,1))
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no7.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+summary(W_no7.7)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no7.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+summary(W_no7.6)
+```
+
+```{r}
+anova(W_no7.7)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no7.7)
+```
+
+Age and temperature are significant.
+
+```{r}
+summary(W_no7.7)
+```
+
+Age and temperature have a negative effect on contant interaction.
+
+```{r}
+est <- cbind(Estimate = coef(W_no7.7), confint(W_no7.7))
+```
+
+Now, use `exp` to get ratios and confidence intervals for our variables in our model of interest:
+
+```{r}
+exp(est)
+```
+
+As age and temperature increase, rate of contact interaction decreases by 0.97 and 0.98, respectively.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no7.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+Anova(W_no7.6)
+```
+
+Age and temp are significant.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no7.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no7.4)
+```
+
+Age and temperature are significant.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no7.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no7.5) #age and temp significant
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no7.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no7.1)
+```
+
+Age, sex, and temperature are significant.
+
+Graph best and simplest model:
+
+### Graph
+
+```{r}
+predictions_W_no7.7 <- ggpredict(W_no7.7, terms = c("age","temperature"), type = "fixed")
+```
+
+```{r}
+ggplot(predictions_W_no7.7, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_line(size = 1) +  # Add lines for the predictions
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.1) +
+  scale_color_manual(values = c("blue3","green","red2")) +
+  scale_fill_manual(values = c("blue3","green","red2")) +
+  theme_ggeffects() +
+  labs(x = "Age (years)",
+       y = "Mean Count of Contact Interaction",
+       color = "Temperature (°C)",
+       fill = "Temperature (°C)")+
+  theme(text = element_text(family = "serif")) +
+  theme(text = element_text(size = 15))
+```
+
+Save plot:
+
+```{r}
+WR_ConInt <- ggplot(predictions_W_no7.7, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_line(size = 1) +  # Add lines for the predictions
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.1) +
+  scale_color_manual(values = c("blue3","green","red2")) +
+  scale_fill_manual(values = c("blue3","green","red2")) +
+  theme_ggeffects() +
+  labs(x = "Age (years)",
+       y = "Mean Count of Contact Interaction",
+       color = "Temperature (°C)",
+       fill = "Temperature (°C)")+
+  theme(text = element_text(family = "serif")) +
+  theme(text = element_text(size = 15))
+```
+
+### Further analysis:
+
+```{r}
+W_no7.7b <- glm.nb(contact_inx_NO ~ age + 
+                     access*temperature + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+AIC(W_no7.7b, W_no7.7)
+```
+
+Model with interaction is better
+
+```{r}
+summary(W_no7.7b)
+summary(W_no7.7)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no7.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+#prediction_W_no7.6 <- ggpredict(W_no7.6b, terms = c("age","temperature","access"), type = "fixed")
+```
+
+## 8. Near to object
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(prop.near)) + geom_histogram()+ theme_ggeffects() 
+```
+
+It does not show a normal distribution
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, prop.near, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, prop.near, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, prop.near, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(access, prop.near, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+Can't see any interactions from any of these graphs. Access seems to have an effect on prop.near.
+
+Modelling:
+
+```{r}
+W_no8.1a <- glmer.nb(near_NO ~ age + sex + housing + birth_type +
+                     access + size + temperature + calf_present + (1|inst_id) + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+
+W_no8.1 <- glm.nb(near_NO ~ age + sex + housing + birth_type +
+                     access + size + temperature + calf_present +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(W_no8.1a)
+anova(W_no8.1a,W_no8.1)
+```
+
+```{r}
+drop1(W_no8.1)
+```
+
+```{r}
+W_no8.2 <- glm.nb(near_NO ~ age + sex + birth_type +
+                     access + size + temperature + calf_present +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no8.2)
+```
+
+```{r}
+W_no8.3 <- glm.nb(near_NO ~ age + sex + birth_type +
+                     access + size + temperature + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no8.3)
+```
+
+```{r}
+W_no8.4 <- glm.nb(near_NO ~ age + sex +
+                     access + size + temperature +  
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no8.4)
+```
+
+```{r}
+W_no8.5 <- glm.nb(near_NO ~ sex + access + size + temperature + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no8.5)
+```
+
+```{r}
+W_no8.6 <- glm.nb(near_NO ~ sex + access + size + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no8.6)
+```
+
+```{r}
+W_no8.7 <- glm.nb(near_NO ~ access + size + 
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+drop1(W_no8.7)
+```
+
+```{r}
+W_no8.8 <- glm.nb(near_NO ~ size +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+W_no8.9 <- glm.nb(near_NO ~ 1 +
+                     offset(log_duration), 
+                     data = w.novelobj)
+```
+
+```{r}
+AIC(W_no8.1, W_no8.2, W_no8.3, W_no8.4, W_no8.5, W_no8.6, W_no8.7, W_no8.8, W_no8.9)
+```
+
+Diagnostic plots:
+
+```{r}
+simulationOutput <- simulateResiduals(W_no8.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no8.7)
+```
+
+Size is significant.
+
+```{r}
+summary(W_no8.7)
+```
+
+Size S compared to size L is significant.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no8.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no8.6) # size is significant
+```
+
+```{r}
+summary(W_no8.6)
+```
+
+Same as previous, only size S is significant.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no8.8)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+Anova(W_no8.8)
+```
+
+Only size in this model and is significant.
+
+Create a table with estimates and confidence intervals using `cbind` function.
+
+```{r}
+est <- cbind(Estimate = coef(W_no8.8), confint(W_no8.8))
+```
+
+Now, use `exp` to get real estimates and confidence intervals for our variables in our model of interest:
+
+```{r}
+exp(est)
+```
+
+```{r}
+summary(W_no8.8)
+```
+
+For this model, size M shows a trend and size S is significant. Rhinos in enclosure size M tend to have a higher rate of being near the object than at large enclosure sizes by 1.5. When in a small enclosure size, rhinos are twice as often near the object than when in large enclosures.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no8.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no8.5)
+```
+
+Enclosure size shows a trend, no significance.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no8.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+Anova(W_no8.1)
+```
+
+Enclosure size shows a trend, no significance.
+
+Graph best and simplest model:
+
+```{r}
+predictions <- ggpredict(W_no8.8, terms = "size", type = "fixed")
+```
+
+```{r}
+summary(W_no8.8)
+```
+
+#### Graph
+
+```{r}
+predictions %>% ggplot(aes(reorder(x,-predicted), predicted)) +
+  geom_boxplot(size = 1, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1) +
+  theme_ggeffects() +
+  xlab("Enclosure Size") +
+  ylab("Mean Count of Near") +
+  theme(text = element_text(family = "serif")) +
+  showSignificance( c(1,2), 14.2, -0.03, "*") +
+  showSignificance( c(2,3), 9, -0.03, "NS") +
+  showSignificance( c(1,3), 15.2, -0.03, "*") +
+  ylim(2.5,15.7)
+```
+
+Save plot:
+
+```{r}
+WR_Near <- predictions %>% ggplot(aes(reorder(x,-predicted), predicted)) +
+  geom_boxplot(size = 1, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1) +
+  theme_ggeffects() +
+  xlab("Enclosure Size") +
+  ylab("Mean Count of Near")+
+  theme(text = element_text(family = "serif")) +
+  showSignificance( c(1,2), 14.2, -0.03, "*") +
+  showSignificance( c(2,3), 9, -0.03, "NS") +
+  showSignificance( c(1,3), 15.2, -0.03, "*") +
+  ylim(2.5,15.7) +
+  theme(text = element_text(size = 15))
+```
+
+## 9. Gate wait
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(prop.gatewait)) + geom_histogram()+ theme_ggeffects() 
+```
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(prop.stimulated)) + geom_histogram()+ theme_ggeffects() 
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, prop.gatewait, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, prop.gatewait, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(access, prop.gatewait, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(birth_type, prop.gatewait, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+#W_no9 <- glmer.nb(gatewait_NO ~  age + sex + housing + birth_type +access + size + temperature + calf_present +  (1|inst_id) + offset(log_durationsec), data = w.novelobj)
+
+#W_no9.1 <- glm.nb(gatewait_NO ~  age + sex + housing + birth_type + access + size + temperature + calf_present + offset(log_durationsec), data = w.novelobj)
+```
+
+They don't work. Try removing 1 variable.
+
+```{r}
+#W_no9 <- glmer.nb(gatewait_NO ~  age + sex + housing + birth_type + access + size + calf_present + (1|inst_id) + offset(log_durationsec), data = w.novelobj)
+
+W_no9.1 <- glm.nb(gatewait_NO ~  age + sex + housing + birth_type +
+                        access + size + calf_present +
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+Doesn't work. Try removing 1 variable.
+
+```{r}
+#drop1(W_no9.1)
+```
+
+```{r}
+summary(W_no9.1)
+```
+
+Doesn't work. Remove access.
+
+```{r}
+W_no9.2 <- glm.nb(gatewait_NO ~ age + sex  + housing + birth_type +
+                    size + calf_present +  
+                    offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no9.2)
+```
+
+```{r}
+W_no9.3 <- glm.nb(gatewait_NO ~ age + sex  + housing +
+                    size + calf_present +  
+                    offset(log_durationsec),
+                  data = w.novelobj)
+
+#W_no9.3a <- glmer.nb(gatewait_NO ~ age + sex  + housing +
+ #                   size + calf_present +  (1|inst_id) +
+  #                  offset(log_durationsec),
+   #               data = w.novelobj)
+```
+
+```{r}
+#anova(W_no9.3a, W_no9.3)
+```
+
+No difference. Remove institution ID
+
+```{r}
+drop1(W_no9.3)
+```
+
+```{r}
+W_no9.4 <- glm.nb(gatewait_NO ~ age + sex  + housing +
+                    calf_present +  
+                    offset(log_durationsec),
+                  data = w.novelobj)
+
+```
+
+```{r}
+drop1(W_no9.4)
+```
+
+```{r}
+W_no9.5 <- glm.nb(gatewait_NO ~ age + sex  +
+                    calf_present +  
+                    offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no9.5)
+```
+
+```{r}
+W_no9.6 <- glm.nb(gatewait_NO ~ sex  + calf_present +  
+                    offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no9.6)
+```
+
+```{r}
+W_no9.7 <- glm.nb(gatewait_NO ~ sex  +  
+                    offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+W_no9.8 <- glm.nb(gatewait_NO ~ 1 + 
+                    offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+Now, let's determine which is the best model.
+
+### Diagnostics:
+
+```{r}
+AIC(W_no9.8, W_no9.7, W_no9.6, W_no9.5, W_no9.4, W_no9.3, W_no9.2, W_no9.1)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no9.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Full model is good.
+
+```{r}
+anova(W_no9.1)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no9.8)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Null model is good too. Best model.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no9.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+anova(W_no9.5)
+```
+
+Not good.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no9.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good.
+
+```{r}
+anova(W_no9.4)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no9.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Good model.
+
+```{r}
+summary(W_no9.3)
+```
+
+```{r}
+Anova(W_no9.3)
+```
+
+## 10. Stimulated
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(prop.stimulated)) + geom_histogram()+ theme_ggeffects() 
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, prop.stimulated, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, prop.stimulated, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(access, prop.stimulated, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(birth_type, prop.stimulated, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+Modelling:
+
+```{r}
+#W_no10.1a <- glmer.nb(stimulated_NO ~ age + sex + housing + birth_type +
+                      #access + size + temperature + calf_present + (1|inst_id) +
+                      #offset(log_durationsec),
+                      #data = w.novelobj) #not sure why model doesn't run
+
+W_no10.1 <- glm.nb(stimulated_NO ~ age + sex + housing + birth_type +
+                        access + size + temperature + calf_present  + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+Determine is random effect should be included in the model. Model W_no10.1 does not work - for summary or any other code. Thus, I'm removing birth type as graph above showed no obvious difference between wild and captive rhinos.
+
+```{r}
+#summary(W_no10.1a)
+#anova(W_no10.1a, W_no10.1)
+```
+
+Cannot determine if institution ID affects the model. Running without birth type.
+
+```{r}
+W_no10.2 <- glm.nb(stimulated_NO ~ age + sex + housing +
+                  size + access + calf_present + 
+                    offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no10.2)
+```
+
+```{r}
+W_no10.1b <- glmer.nb(stimulated_NO ~ age + sex + housing +
+                      access + size + temperature + calf_present + (1|inst_id) +
+                      offset(log_durationsec),
+                      data = w.novelobj)
+```
+
+```{r}
+anova(W_no10.1b, W_no10.2)
+```
+
+Institution does not affect the model. Thus, removing random effect.
+
+```{r}
+W_no10.3 <- glm.nb(stimulated_NO ~ age + sex + housing +
+                   access + calf_present + 
+                   offset(log_duration),
+                   data = w.novelobj)
+```
+
+```{r}
+drop1(W_no10.3)
+```
+
+```{r}
+W_no10.4 <- glm.nb(stimulated_NO ~ age + sex +
+                   access + calf_present + 
+                   offset(log_duration),
+                   data = w.novelobj)
+```
+
+```{r}
+drop1(W_no10.4)
+```
+
+```{r}
+W_no10.5 <- glm.nb(stimulated_NO ~ sex +
+                   access + calf_present + 
+                   offset(log_duration),
+                   data = w.novelobj)
+```
+
+```{r}
+drop1(W_no10.5)
+```
+
+```{r}
+W_no10.6 <- glm.nb(stimulated_NO ~  sex + calf_present + 
+                   offset(log_duration),
+                   data = w.novelobj)
+```
+
+```{r}
+drop1(W_no10.6)
+```
+
+```{r}
+W_no10.7 <- glm.nb(stimulated_NO ~  sex + 
+                   offset(log_duration),
+                   data = w.novelobj)
+```
+
+```{r}
+W_no10.8 <- glm.nb(stimulated_NO ~  1 + 
+                   offset(log_duration),
+                   data = w.novelobj)
+```
+
+```{r}
+AIC(W_no10.1, W_no10.2, W_no10.3, W_no10.4, W_no10.5, W_no10.6, W_no10.7, W_no10.8)
+```
+
+Diagnostic plots:
+
+```{r}
+par(mfrow = c(1,1))
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no10.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no10.7)
+```
+
+```{r}
+summary(W_no10.7)
+```
+
+Not significant in either.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no10.8)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+Passed all tests.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no10.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+Detected quantile deviations but it's not significant. Passed all tests.
+
+```{r}
+Anova(W_no10.6)
+```
+
+Sex is significant.
+
+```{r}
+summary(W_no10.6)
+```
+
+Sex is significant.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no10.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput) 
+```
+
+Graph simplest model: null model is the best model. No graph.
+
+## 11. Active
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(prop.active)) + geom_histogram() + theme_ggeffects()
+```
+
+Not normally distributed.
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, prop.active, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, prop.active, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, prop.active, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(access, prop.active, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(size, prop.active, color = sex)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+W_no11.1a <- glmer.nb(active_NO ~  age + sex + housing + birth_type +
+                        access + size + temperature + calf_present  + 
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+
+W_no11.1 <- glm.nb(active_NO ~  age + sex + housing + birth_type +
+                        access + size + temperature + calf_present  + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(W_no11.1a)
+anova(W_no11.1a, W_no11.1)
+```
+
+Institution ID doesn't add variance in negative binomial models.
+
+```{r}
+drop1(W_no11.1)
+```
+
+```{r}
+W_no11.2 <- glm.nb(active_NO ~ age + sex + housing + birth_type +
+                        access+ temperature + calf_present  + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no11.2)
+```
+
+```{r}
+W_no11.3 <- glm.nb(active_NO ~ age + sex + housing + birth_type +
+                  temperature + calf_present  + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no11.3)
+```
+
+```{r}
+W_no11.4 <- glm.nb(active_NO ~ age + sex + housing + birth_type +
+                  temperature + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no11.4)
+```
+
+```{r}
+W_no11.5 <- glm.nb(active_NO ~ age + sex + housing + birth_type +
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no11.5)
+```
+
+```{r}
+W_no11.6 <- glm.nb(active_NO ~ age +housing + birth_type +
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no11.6)
+```
+
+```{r}
+W_no11.7 <- glm.nb(active_NO ~ housing + age +
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no11.7)
+```
+
+```{r}
+W_no11.8 <- glm.nb(active_NO ~ age +
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+W_no11.9 <- glm.nb(active_NO ~ 1 +
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+AIC(W_no11.1, W_no11.2, W_no11.3, W_no11.4, W_no11.5, W_no11.6, W_no11.7, W_no11.8, W_no11.9)
+```
+
+Diagnostic plots:
+
+```{r}
+par(mfrow = c(1,1))
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no11.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no11.5)
+```
+
+```{r}
+summary(W_no11.5)
+```
+
+Age is significant.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no11.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no11.6)
+```
+
+Age and housing are significant.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no11.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no11.7)
+```
+
+Age and housing are significant.
+
+```{r}
+summary(W_no11.7)
+```
+
+Housing and age have negative effect.
+
+```{r}
+est <- cbind(Estimate = coef(W_no11.7), confint(W_no11.7))
+exp(est)
+```
+
+Rhinos housed socially are -0.63% less active than rhinos housed socially. As rhinos age, they are 0.98% less active each year.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no11.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+```{r}
+Anova(W_no11.4)
+```
+
+Age is significant.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no11.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed all tests.
+
+### Graph
+
+Graph simplest and best model:
+
+```{r}
+predictions_W_no11.7 <- ggpredict(W_no11.7, terms = c("age","housing"), type = "fixed")
+```
+
+```{r}
+ggplot(predictions_W_no11.7, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_line(size = 1) +
+geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.1) + 
+  scale_color_manual(values = c("green4", "darkviolet")) +
+  scale_fill_manual(values = c("green4", "darkviolet")) +
+  theme_ggeffects() +
+    labs(x = "Age (years)",
+       y = "Duration of Active (s)",
+       color = "Sociality",
+       fill = "Sociality")+
+  theme(text = element_text(size = 18)) +
+  theme(axis.text = element_text(size = 14))
+```
+
+Save plot:
+
+```{r}
+WR_Act <- ggplot(predictions_W_no11.7, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_line(size = 1) +
+geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.1) + 
+  scale_color_manual(values = c("green4", "darkviolet")) +
+  scale_fill_manual(values = c("green4", "darkviolet")) +
+  theme_ggeffects() +
+    labs(x = "Age (years)",
+       y = "Duration of Active (s)",
+       color = "Sociality",
+       fill = "Sociality")+
+  theme(text = element_text(size = 15)) +
+  theme(text = element_text(family = "serif")) 
+```
+
+## 12. Pacing
+
+```{r}
+w.novelobj %>% ggplot(aes(prop.pace)) + geom_histogram()+ theme_ggeffects()
+```
+
+Excluded. Only occurred in 2 rhinos.
+
+## 13. Latency to approach
+
+Remove the ones that never approached - and check how many there were
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(latency_sec)) + geom_histogram()+ theme_ggeffects()
+w.novelobj %>%  filter(rhino_id != "White-1150") %>% ggplot(aes(latency_sec)) + geom_histogram()+ theme_ggeffects()
+```
+
+Remove White-1150. It's the only rhino that did not approach the basket.
+
+```{r}
+w.novelobj %>% dplyr::select(latency_sec, rhino_id, censoring, log_durationsec) %>% arrange(censoring)
+```
+
+```{r}
+WRM_latency <- w.novelobj %>% filter(rhino_id != "White-1150") 
+```
+
+```{r}
+WRM_latency %>%
+  ggplot(aes(age, latency_sec, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+WRM_latency %>%
+  ggplot(aes(temperature, latency_sec, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+WRM_latency %>%
+  ggplot(aes(access, latency_sec, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+WRM_latency %>%
+  ggplot(aes(calf_present, latency_sec, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+WRM_latency %>%
+  ggplot(aes(birth_type, latency_sec, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+Wild, enclosure size L was higher mean than others.
+
+### Modelling:
+
+```{r}
+W_no13.1a <- glmer.nb(latency_sec ~  age + sex + housing + birth_type +
+                        access + size + temperature + calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = WRM_latency)
+
+W_no13.1 <- glm.nb(latency_sec ~  age + sex + housing + birth_type +
+                        access + size + temperature + calf_present +
+                  offset(log_durationsec),
+                  data = WRM_latency)
+```
+
+Determine if random effect needs to be included in the model.
+
+```{r}
+summary(W_no13.1a)
+anova(W_no13.1a, W_no13.1)
+```
+
+```{r}
+drop1(W_no13.1) %>% arrange(-AIC)
+```
+
+```{r}
+W_no13.2 <- glm.nb(latency_sec ~  age + sex + housing + birth_type +
+                        access + size + calf_present +
+                  offset(log_durationsec),
+                  data = WRM_latency)
+```
+
+```{r}
+drop1(W_no13.2) %>% arrange(-AIC)
+```
+
+```{r}
+W_no13.3 <- glm.nb(latency_sec ~  age + birth_type + housing +
+                        access + size + calf_present +
+                  offset(log_durationsec),
+                  data = WRM_latency)
+```
+
+```{r}
+drop1(W_no13.3) %>% arrange(-AIC)
+```
+
+```{r}
+W_no13.4 <- glm.nb(latency_sec ~  age + housing +
+                        access + size + calf_present +
+                  offset(log_durationsec),
+                  data = WRM_latency)
+```
+
+```{r}
+drop1(W_no13.4) %>% arrange(-AIC)
+```
+
+```{r}
+W_no13.5 <- glm.nb(latency_sec ~  age + access + size + calf_present +
+                  offset(log_durationsec),
+                  data = WRM_latency)
+```
+
+```{r}
+drop1(W_no13.5) %>% arrange(-AIC)
+```
+
+```{r}
+W_no13.6 <- glm.nb(latency_sec ~  access + size + calf_present +
+                  offset(log_durationsec),
+                  data = WRM_latency)
+```
+
+```{r}
+drop1(W_no13.6) %>% arrange(-AIC)
+```
+
+```{r}
+W_no13.7 <- glm.nb(latency_sec ~  access + calf_present +
+                  offset(log_durationsec),
+                  data = WRM_latency)
+```
+
+```{r}
+drop1(W_no13.7) %>% arrange(-AIC)
+```
+
+```{r}
+W_no13.8 <- glm.nb(latency_sec ~  access +
+                  offset(log_durationsec),
+                  data = WRM_latency)
+```
+
+```{r}
+W_no13.9 <- glm.nb(latency_sec ~  1 +
+                  offset(log_durationsec),
+                  data = WRM_latency)
+```
+
+### Diagnostics:
+
+```{r}
+AIC(W_no13.9, W_no13.8, W_no13.7, W_no13.6, W_no13.5, W_no13.4, W_no13.3, W_no13.2, W_no13.1) %>% arrange(-AIC)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no13.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Full model didn't pass combined adjusted quantile test.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no13.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Model didn't pass combined adjusted quantile test.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no13.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Model didn't pass combined adjusted quantile test.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no13.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Model didn't pass combined adjusted quantile test.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no13.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Model didn't pass combined adjusted quantile test.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no13.2)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Model didn't pass combined adjusted quantile test.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no13.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Model didn't pass combined adjusted quantile test.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no13.8)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Model didn't pass combined adjusted quantile test.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no13.9)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Model didn't pass combined adjusted quantile test. No model is good.
+
+## 14. Unstimulated
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(prop.unstimulated)) + geom_histogram()+ theme_ggeffects() 
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, prop.unstimulated, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, prop.unstimulated, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(access, prop.unstimulated, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(calf_present, prop.unstimulated, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(birth_type, prop.unstimulated, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+Not any obvious trends observed.
+
+### Modelling:
+
+```{r}
+W_no14.1a <- glmer.nb(unstimulated_NO ~  age + sex + housing + birth_type +
+                        access + size + temperature + calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+
+W_no14.1 <- glm.nb(unstimulated_NO ~  age + sex + housing + birth_type +
+                        access + size + temperature + calf_present +
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+Determine if random effect needs to be included in the model.
+
+```{r}
+summary(W_no14.1a)
+anova(W_no14.1a, W_no14.1)
+```
+
+Institution ID has high variance in negative binomial models.
+
+```{r}
+drop1(W_no14.1a)
+```
+
+```{r}
+W_no14.2 <- glmer.nb(unstimulated_NO ~  age + sex + housing + birth_type +
+                        access + size + calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no14.2)
+```
+
+```{r}
+W_no14.3 <- glmer.nb(unstimulated_NO ~  age + sex + birth_type +
+                        access + size + calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no14.3)
+```
+
+```{r}
+W_no14.4 <- glmer.nb(unstimulated_NO ~  age + sex + birth_type +
+                        access + calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no14.4)
+```
+
+```{r}
+W_no14.5 <- glmer.nb(unstimulated_NO ~  age + sex + birth_type +access +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no14.5)
+```
+
+```{r}
+W_no14.6 <- glmer.nb(unstimulated_NO ~  sex + birth_type +access +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no14.6)
+```
+
+```{r}
+W_no14.7 <- glmer.nb(unstimulated_NO ~  sex +access +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no14.7)
+```
+
+```{r}
+W_no14.8 <- glmer.nb(unstimulated_NO ~ access +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+W_no14.9 <- glmer.nb(unstimulated_NO ~ 1 +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+AIC(W_no14.1a, W_no14.2, W_no14.3, W_no14.4, W_no14.5, W_no14.6, W_no14.7, W_no14.8, W_no14.9)
+```
+
+### Diagnostics:
+
+```{r}
+summary(W_no14.1a)
+simulationOutput <- simulateResiduals(W_no14.1a)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(W_no14.1a)
+```
+
+```{r}
+summary(W_no14.9)
+simulationOutput <- simulateResiduals(W_no14.9)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(W_no14.1a)
+```
+
+```{r}
+summary(W_no14.3)
+simulationOutput <- simulateResiduals(W_no14.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(W_no14.3)
+```
+
+```{r}
+summary(W_no14.2)
+simulationOutput <- simulateResiduals(W_no14.2)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(W_no14.2)
+```
+
+```{r}
+summary(W_no14.4)
+simulationOutput <- simulateResiduals(W_no14.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(W_no14.4)
+```
+
+No model is good
+
+## 15. Inactive
+
+Visualization: Graph a histogram to determine distribution.
+
+```{r}
+w.novelobj %>% ggplot(aes(prop.inactive)) + geom_histogram()+ theme_ggeffects() 
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, prop.inactive, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, prop.inactive, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(access, prop.inactive, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, prop.inactive, color = birth_type)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(birth_type, prop.inactive, color=sex)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, prop.inactive, color = size)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+W_no15.1a <- glmer.nb(inactive_NO ~  age + sex + housing + birth_type +
+                  access + size + temperature + calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+
+W_no15.1 <- glm.nb(inactive_NO ~  age + sex + housing + birth_type +
+                  access + size + temperature + calf_present +
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+summary(W_no15.1a)
+anova(W_no15.1a, W_no15.1)
+```
+
+Institution ID has significant variance in negative binomial models.
+
+```{r}
+drop1(W_no15.1a)
+```
+
+```{r}
+W_no15.2 <- glmer.nb(inactive_NO ~  age + sex + housing + birth_type +
+                  access + size + calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no15.2)
+```
+
+```{r}
+W_no15.3 <- glmer.nb(inactive_NO ~  age + sex + housing +
+                  access + size + calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no15.3)
+```
+
+```{r}
+W_no15.4 <- glmer.nb(inactive_NO ~  age + sex +
+                  access + size + calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no15.4)
+```
+
+```{r}
+W_no15.5 <- glmer.nb(inactive_NO ~  age +
+                  access + size + calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no15.5)
+```
+
+```{r}
+W_no15.6 <- glmer.nb(inactive_NO ~  age + size + calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no15.6)
+```
+
+```{r}
+W_no15.7 <- glmer.nb(inactive_NO ~  size + calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no15.7)
+```
+
+```{r}
+W_no15.8 <- glmer.nb(inactive_NO ~  calf_present +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+W_no15.8a <- glm.nb(inactive_NO ~  calf_present  + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+W_no15.9 <- glmer.nb(inactive_NO ~  1 +
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+W_no15.10 <- glm.nb(inactive_NO ~  1 +
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+W_no15.10a <- glmer.nb(inactive_NO ~  1 + (1|inst_id) +
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+summary(W_no15.10a)
+```
+
+```{r}
+anova(W_no15.10a, W_no15.10)
+```
+
+### Diagnostics:
+
+```{r}
+AIC(W_no15.1a, W_no15.2, W_no15.3, W_no15.4, W_no15.5, W_no15.6, W_no15.7, W_no15.8, W_no15.9, W_no15.10,W_no15.10a)
+```
+
+```{r}
+summary(W_no15.1a)
+simulationOutput <- simulateResiduals(W_no15.1a)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(W_no15.1a)
+```
+
+```{r}
+summary(W_no15.8)
+simulationOutput <- simulateResiduals(W_no15.8)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(W_no15.8)
+```
+
+```{r}
+summary(W_no15.9)
+simulationOutput <- simulateResiduals(W_no15.9)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(W_no15.8)
+```
+
+```{r}
+summary(W_no15.7)
+simulationOutput <- simulateResiduals(W_no15.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(W_no15.7)
+```
+
+```{r}
+summary(W_no15.6)
+simulationOutput <- simulateResiduals(W_no15.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(W_no15.6)
+```
+
+```{r}
+summary(W_no15.5)
+simulationOutput <- simulateResiduals(W_no15.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+
+Anova(W_no15.5)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no15.3)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no15.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no15.2)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no15.10)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+This model is passes all the diagnostic tests. However, this one doesn't include the random effect (which makes a significant difference). This one is the null model.
+
+```{r}
+simulationOutput <- simulateResiduals(W_no15.8a)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+## 17. Attack
+
+```{r}
+w.novelobj %>% ggplot(aes(freq.attack)) + geom_histogram()+ theme_ggeffects()
+```
+
+Mostly zeroes
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(age, freq.attack, color = housing)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, freq.attack, color = sex)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(temperature, freq.attack, color = access)) + 
+  geom_point() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(access, freq.attack, color = size)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+```{r}
+w.novelobj %>%
+  ggplot(aes(size, freq.attack, color = sex)) + 
+  geom_boxplot() +
+  geom_smooth(method = "glm", se = FALSE)
+```
+
+### Modelling:
+
+```{r}
+W_no17.1a <- glmer.nb(attack_NO ~  age + sex + housing + birth_type +
+                        access + size + temperature + calf_present  + 
+                  (1|inst_id) + offset(log_durationsec),
+                  data = w.novelobj)
+
+W_no17.1 <- glm.nb(attack_NO ~  age + sex + housing + birth_type +
+                        access + size + temperature + calf_present  + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+Determine if random effect should be included.
+
+```{r}
+summary(W_no17.1a)
+anova(W_no17.1a, W_no17.1)
+```
+
+Institution ID doesn't add variance in negative binomial models.
+
+```{r}
+drop1(W_no17.1)
+```
+
+```{r}
+W_no17.2 <- glm.nb(attack_NO ~  age + sex + housing +
+                        access + size + temperature + calf_present  + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no17.2)
+```
+
+```{r}
+W_no17.3 <- glm.nb(attack_NO ~  age + sex + housing +
+                        access + size + calf_present  + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no17.3)
+```
+
+```{r}
+W_no17.4 <- glm.nb(attack_NO ~  age + sex + housing +
+                        access + calf_present  + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no17.4)
+```
+
+```{r}
+W_no17.5 <- glm.nb(attack_NO ~ sex + housing +
+                        access + calf_present  + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no17.5)
+```
+
+```{r}
+W_no17.6 <- glm.nb(attack_NO ~ sex + housing +
+                        access  + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no17.6)
+```
+
+```{r}
+W_no17.7 <- glm.nb(attack_NO ~ sex +
+                        access  + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+drop1(W_no17.7)
+```
+
+```{r}
+W_no17.8 <- glm.nb(attack_NO ~ access  + 
+                  offset(log_duration),
+                  data = w.novelobj)
+```
+
+```{r}
+W_no17.9 <- glm.nb(attack_NO ~ 1  + 
+                  offset(log_durationsec),
+                  data = w.novelobj)
+```
+
+```{r}
+AIC(W_no17.9,W_no17.8,W_no17.7,W_no17.6,W_no17.5,W_no17.4, W_no17.3, W_no17.2, W_no17.1)
+```
+
+### Diagnostic plots:
+
+```{r}
+summary(W_no17.8)
+simulationOutput <- simulateResiduals(W_no17.8)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Passed diagnostics. WR in outdoor enclosures attacked less frequently than WR with indoor access
+
+```{r}
+anova(W_no17.8)
+```
+
+```{r}
+summary(W_no17.7)
+simulationOutput <- simulateResiduals(W_no17.7)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+anova(W_no17.7)
+```
+
+```{r}
+summary(W_no17.6)
+simulationOutput <- simulateResiduals(W_no17.6)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+anova(W_no17.6)
+```
+
+```{r}
+summary(W_no17.5)
+simulationOutput <- simulateResiduals(W_no17.5)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+anova(W_no17.5)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no17.4)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+```{r}
+simulationOutput <- simulateResiduals(W_no17.1)
+plotQQunif(simulationOutput) 
+plotResiduals(simulationOutput)
+```
+
+Not good
+
+### Graph
+
+Graph simplest and best model:
+
+```{r}
+predictions <- ggpredict(W_no17.8, terms = c("access"), type = "fixed")
+```
+
+```{r}
+ggplot(predictions, aes(x = x, y = predicted)) +  
+  geom_boxplot(size = 1, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1)  +
+  theme_ggeffects() +
+    labs(   x = "Access",
+       y = "Frequency of Attack")+
+  theme(text = element_text(family = "serif"))
+```
+
+Save plot:
+
+```{r}
+WR_attack <- ggplot(predictions, aes(x = x, y = predicted)) +  
+  geom_boxplot(size = 1, width = 0.5) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1)  +
+  theme_ggeffects() +
+    labs(   x = "Access",
+       y = "Mean Count of Attack")+
+  theme(text = element_text(family = "serif"))+
+  theme(text = element_text(size = 15))
+```
+
+# PLOTS
+
+## BR
+
+```{r}
+combined_BR <- BR_OlfObj + BNear + BR_Sti +
+  plot_annotation(tag_levels = 'A')
+
+print(combined_BR)
+```
+
+```{r}
+#ggsave(combined_BR,  filename = "~/combined_BR.tiff",height = 4, width = 12, units = "in", dpi = 400)
+```
+
+## WR
+
+```{r}
+combined_WR <- ((WR_Pant + WR_OlfObj + WR_OlfOther) / 
+  (WR_ConInt + WR_attack + WR_Near ) / 
+  (WR_Act + plot_spacer() + plot_spacer()))
+
+combined_WR <- combined_WR + plot_annotation(tag_levels = "A")
+
+print(combined_WR)
+```
+
+```{r}
+#ggsave(combined_WR,filename = "~/combined_WR.tiff", height = 12, width = 12, units = "in", dpi = 400)
+```
