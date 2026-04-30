@@ -1467,7 +1467,239 @@ cor.test(WRM_temperament$freq.attack, WRM_temperament$cons_ag, method = "spearma
 cor.test(WRM_temperament$freq.attack, WRM_temperament$vocal, method = "spearman")
 ```
 
-## WR Prop.Near and PC3 cor
+# BR Adjusted p-value
+
+### 1. Rho values:
+
+```{r}
+Bcor_beh <- BRM_temperament %>% dplyr::select(PC2, active, PC3, affiliative, aggressive, responsive, fearful, PC1, calm, con_ff, stereotypies, vocal, 
+                                                  investigative, no_obj, chemosensory, con_af, cons_ag,
+                                                  prop.active, prop.gatewait, prop.stimulated, prop.pace, freq.advance_direct, latency_sec, prop.near, 
+                                                  freq.retreat, freq.contact_inx, freq.olfact_obj, freq.olfact_other)
+```
+
+Make a matrix for these correlations
+```{r}
+BR_cor_rho <- cor(Bcor_beh, method = "spearman", use="pairwise")
+```
+
+Make it a dataframe
+```{r}
+BR_cor_rho <- as.data.frame(BR_cor_rho)
+```
+
+```{r}
+BR_cor_rho <- BR_cor_rho %>% dplyr::select(prop.active, prop.gatewait, prop.stimulated, prop.pace, freq.advance_direct, 
+                              latency_sec, prop.near, freq.retreat, freq.contact_inx, freq.olfact_obj, freq.olfact_other)
+```
+
+```{r}
+BR_cor_rho <- BR_cor_rho [(rownames(BR_cor_rho) != "prop.active"),]
+BR_cor_rho <- BR_cor_rho [(rownames(BR_cor_rho) != "prop.gatewait"),]
+BR_cor_rho <- BR_cor_rho [(rownames(BR_cor_rho) != "prop.stimulated"),]
+BR_cor_rho <- BR_cor_rho [(rownames(BR_cor_rho) != "prop.pace"),]
+BR_cor_rho <- BR_cor_rho [(rownames(BR_cor_rho) != "freq.advance_direct"),]
+BR_cor_rho <- BR_cor_rho [(rownames(BR_cor_rho) != "latency_sec"),]
+BR_cor_rho <- BR_cor_rho [(rownames(BR_cor_rho) != "prop.near"),]
+BR_cor_rho <- BR_cor_rho [(rownames(BR_cor_rho) != "freq.retreat"),]
+BR_cor_rho <- BR_cor_rho [(rownames(BR_cor_rho) != "freq.contact_inx"),]
+BR_cor_rho <- BR_cor_rho [(rownames(BR_cor_rho) != "freq.olfact_obj"),]
+BR_cor_rho <- BR_cor_rho [(rownames(BR_cor_rho) != "freq.olfact_other"),]
+```
+
+First, convert row names to column
+```{r}
+BR_cor_rho <- rownames_to_column(BR_cor_rho, var = "variable 1")
+```
+
+```{r}
+BR_rho <- pivot_longer(BR_cor_rho, cols = 2:12)
+```
+
+```{r}
+BR_rho <- BR_rho %>% rename('rho' = value)
+```
+
+## 2. p-value:
+
+```{r}
+install.packages("Hmisc")
+library("Hmisc")
+
+```
+
+Make a matrix for these correlations
+```{r}
+BR_cor_adj_p <- rcorr(as.matrix(Bcor_beh), type = "spearman")
+```
+
+```{r}
+BR_cor_adj_p$P
+```
+
+```{r}
+BR_cor_adj_p <- as.data.frame(BR_cor_adj_p$P)
+```
+
+```{r}
+BR_cor_adj_p <- BR_cor_adj_p %>% dplyr::select(prop.active, prop.gatewait, prop.stimulated, prop.pace, freq.advance_direct, 
+                              latency_sec, prop.near, freq.retreat, freq.contact_inx, freq.olfact_obj, freq.olfact_other)
+```
+
+```{r}
+BR_cor_adj_p <- BR_cor_adj_p [(rownames(BR_cor_adj_p) != "prop.active"),]
+BR_cor_adj_p <- BR_cor_adj_p [(rownames(BR_cor_adj_p) != "prop.gatewait"),]
+BR_cor_adj_p <- BR_cor_adj_p [(rownames(BR_cor_adj_p) != "prop.stimulated"),]
+BR_cor_adj_p <- BR_cor_adj_p [(rownames(BR_cor_adj_p) != "prop.pace"),]
+BR_cor_adj_p <- BR_cor_adj_p [(rownames(BR_cor_adj_p) != "freq.advance_direct"),]
+BR_cor_adj_p <- BR_cor_adj_p [(rownames(BR_cor_adj_p) != "latency_sec"),]
+BR_cor_adj_p <- BR_cor_adj_p [(rownames(BR_cor_adj_p) != "prop.near"),]
+BR_cor_adj_p <- BR_cor_adj_p [(rownames(BR_cor_adj_p) != "freq.retreat"),]
+BR_cor_adj_p <- BR_cor_adj_p [(rownames(BR_cor_adj_p) != "freq.contact_inx"),]
+BR_cor_adj_p <- BR_cor_adj_p [(rownames(BR_cor_adj_p) != "freq.olfact_obj"),]
+BR_cor_adj_p <- BR_cor_adj_p [(rownames(BR_cor_adj_p) != "freq.olfact_other"),]
+```
+
+First, convert row names to column
+```{r}
+BR_cor_adj_p <- rownames_to_column(BR_cor_adj_p, var = "variable 1")
+```
+
+Make it a dataframe
+```{r}
+BR_p <- pivot_longer(BR_cor_adj_p, cols = 2:12)
+```
+
+```{r}
+BR_p <- BR_p %>% rename(pvalue = value)
+```
+
+```{r}
+BR_p <- BR_p %>% as.data.frame(BR_p)
+BR_p %>% mutate(p_adj =(pvalue*187))
+```
+
+```{r}
+BR_p_adj_fdr <- BR_p %>% mutate(p.adj = p.adjust(pvalue, method = "fdr"))
+```
+
+# WR Adjusted p-value
+
+### 1. Rho values:
+
+```{r}
+Wcor_beh <- WRM_temperament %>% dplyr::select(PC2, active, PC1, aggressive, fam_af, responsive, stranger_af, fam_ff, stranger_ff, 
+                                                  PC3, con_ff, stereotypies, investigative, no_obj, 
+                                                  chemosensory, PC4, con_af, cons_ag, vocal,
+                                                  prop.active, prop.gatewait, prop.stimulated, freq.attack, freq.advance_direct, latency_sec, prop.near, 
+                                                  freq.contact_inx, freq.olfact_other, freq.pant)
+```
+
+Make a matrix for these correlations
+```{r}
+WR_cor_rho <- cor(Wcor_beh, method = "spearman", use="pairwise")
+```
+
+Make it a dataframe
+```{r}
+WR_cor_rho <- as.data.frame(WR_cor_rho)
+```
+
+```{r}
+WR_cor_rho <- WR_cor_rho %>% dplyr::select(prop.active, prop.gatewait, prop.stimulated, freq.attack, freq.advance_direct, latency_sec, prop.near, 
+                                                  freq.contact_inx, freq.olfact_other, freq.pant)
+```
+
+```{r}
+WR_cor_rho <- WR_cor_rho [(rownames(WR_cor_rho) != "prop.active"),]
+WR_cor_rho <- WR_cor_rho [(rownames(WR_cor_rho) != "prop.gatewait"),]
+WR_cor_rho <- WR_cor_rho [(rownames(WR_cor_rho) != "prop.stimulated"),]
+WR_cor_rho <- WR_cor_rho [(rownames(WR_cor_rho) != "freq.attack"),]
+WR_cor_rho <- WR_cor_rho [(rownames(WR_cor_rho) != "freq.advance_direct"),]
+WR_cor_rho <- WR_cor_rho [(rownames(WR_cor_rho) != "latency_sec"),]
+WR_cor_rho <- WR_cor_rho [(rownames(WR_cor_rho) != "prop.near"),]
+WR_cor_rho <- WR_cor_rho [(rownames(WR_cor_rho) != "freq.contact_inx"),]
+WR_cor_rho <- WR_cor_rho [(rownames(WR_cor_rho) != "freq.olfact_other"),]
+WR_cor_rho <- WR_cor_rho [(rownames(WR_cor_rho) != "freq.pant"),]
+```
+
+First, convert row names to column
+```{r}
+WR_cor_rho <- rownames_to_column(WR_cor_rho, var = "variable 1")
+```
+
+```{r}
+WR_rho <- pivot_longer(WR_cor_rho, cols = 2:11)
+```
+
+```{r}
+WR_rho <- WR_rho %>% rename('rho' = value)
+```
+
+## 2. p-value:
+
+```{r}
+install.packages("Hmisc")
+library("Hmisc")
+
+```
+
+Make a matrix for these correlations
+```{r}
+WR_cor_adj_p <- rcorr(as.matrix(Wcor_beh), type = "spearman")
+```
+
+```{r}
+WR_cor_adj_p$P
+```
+
+```{r}
+WR_cor_adj_p <- as.data.frame(WR_cor_adj_p$P)
+```
+
+```{r}
+WR_cor_adj_p <- WR_cor_adj_p %>% dplyr::select(prop.active, prop.gatewait, prop.stimulated, freq.attack, freq.advance_direct, latency_sec, prop.near, 
+                                                  freq.contact_inx, freq.olfact_other, freq.pant)
+```
+
+```{r}
+WR_cor_adj_p <- WR_cor_adj_p [(rownames(WR_cor_adj_p) != "prop.active"),]
+WR_cor_adj_p <- WR_cor_adj_p [(rownames(WR_cor_adj_p) != "prop.gatewait"),]
+WR_cor_adj_p <- WR_cor_adj_p [(rownames(WR_cor_adj_p) != "prop.stimulated"),]
+WR_cor_adj_p <- WR_cor_adj_p [(rownames(WR_cor_adj_p) != "freq.attack"),]
+WR_cor_adj_p <- WR_cor_adj_p [(rownames(WR_cor_adj_p) != "freq.advance_direct"),]
+WR_cor_adj_p <- WR_cor_adj_p [(rownames(WR_cor_adj_p) != "latency_sec"),]
+WR_cor_adj_p <- WR_cor_adj_p [(rownames(WR_cor_adj_p) != "prop.near"),]
+WR_cor_adj_p <- WR_cor_adj_p [(rownames(WR_cor_adj_p) != "freq.contact_inx"),]
+WR_cor_adj_p <- WR_cor_adj_p [(rownames(WR_cor_adj_p) != "freq.olfact_other"),]
+WR_cor_adj_p <- WR_cor_adj_p [(rownames(WR_cor_adj_p) != "freq.pant"),]
+```
+
+First, convert row names to column
+```{r}
+WR_cor_adj_p <- rownames_to_column(WR_cor_adj_p, var = "variable 1")
+```
+
+Make it a dataframe
+```{r}
+WR_p <- pivot_longer(WR_cor_adj_p, cols = 2:11)
+```
+
+```{r}
+WR_p <- WR_p %>% rename(pvalue = value)
+```
+
+```{r}
+WR_p <- WR_p %>% as.data.frame(WR_p)
+```
+
+```{r}
+WR_p_adj_fdr <- WR_p %>% mutate(p.adj = p.adjust(pvalue, method = "fdr"))
+```
+
+## WR Prop.Near and PC3 (additional)
+
+# Note: this is additional information not included in the manuscript
 
 ```{r}
 WR_near_PC3_int <- lm(PC3 ~ prop.near * size, data = WRM_temperament)
@@ -1487,7 +1719,7 @@ summary(WR_near_PC3)
 anova(WR_near_PC3)
 ```
 
-## 1. Load Social husbandry survey data
+## 1. Load Social husbandry survey data 
 
 ```{r}
 social_hus <- read.csv("~/Husbandry_housing.csv")
